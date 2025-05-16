@@ -24,7 +24,6 @@ import (
 
 	"github.com/baidu/mochow-sdk-go/v2/client"
 	"github.com/baidu/mochow-sdk-go/v2/mochow"
-	"github.com/baidu/mochow-sdk-go/v2/mochow/api"
 )
 
 func main() {
