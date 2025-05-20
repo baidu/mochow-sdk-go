@@ -16,6 +16,8 @@
 
 package api
 
+import "github.com/bytedance/sonic"
+
 type CreateDatabaseArgs struct {
 	Database string `json:"database"`
 }
@@ -144,6 +146,24 @@ type QueryRowResult struct {
 	Row Row `json:"row,omitempty"`
 }
 
+type QueryKey struct {
+	PrimaryKey   map[string]interface{} `json:"primaryKey,omitempty"`
+	PartitionKey map[string]interface{} `json:"partitionKey,omitempty"`
+}
+
+type BatchQueryRowArgs struct {
+	Database        string          `json:"database"`
+	Table           string          `json:"table"`
+	Keys            []QueryKey      `json:"keys,omitempty"`
+	Projections     []string        `json:"projections,omitempty"`
+	RetrieveVector  bool            `json:"retrieveVector,omitempty"`
+	ReadConsistency ReadConsistency `json:"readConsistency,omitempty"`
+}
+
+type BatchQueryRowResult struct {
+	Row []Row `json:"rows,omitempty"`
+}
+
 // Deprecated
 type SearchRowArgs struct {
 	Database        string                 `json:"database"`
@@ -164,6 +184,7 @@ type RowResult struct {
 type SearchRowResult struct {
 	SearchVectorFloats []float32   `json:"searchVectorFloats,omitempty"`
 	Rows               []RowResult `json:"rows,omitempty"`
+	IteratedIds        string      `json:"iteratedIds,omitempty"`
 }
 
 // vector topk search, range search and batch search
@@ -185,6 +206,26 @@ type HybridSearchArgs struct {
 	Database string
 	Table    string
 	Request  hybridSearchRequest
+}
+
+// multi vector search (vector + BM25)
+type MultivectorSearchArgs struct {
+	Database string
+	Table    string
+	Request  vectorSearchRequest
+}
+
+// search iterator
+type SearchIteratorArgs struct {
+	Database        string
+	Table           string
+	Request         vectorSearchRequest
+	BatchSize       uint32
+	TotalSize       uint32
+	PartitionKey    map[string]interface{}
+	Projections     []string
+	ReadConsistency ReadConsistency
+	Config          map[string]interface{}
 }
 
 type SearchResult struct {
@@ -228,4 +269,126 @@ type BatchSearchRowArgs struct {
 
 type BatchSearchRowResult struct {
 	Results []SearchRowResult `json:"results,omitempty"`
+}
+
+///////////////////////////////  RBAC  ///////////////////////////////
+
+type PrivilegeTuple struct {
+	Database   string   `json:"database,omitempty"`
+	Table      string   `json:"table,omitempty"`
+	Privileges []string `json:"privileges,omitempty"`
+}
+
+func (p *PrivilegeTuple) UnmarshalJSON(data []byte) error {
+
+	tmp := struct {
+		Database   string   `json:"database,omitempty"`
+		Table      string   `json:"table,omitempty"`
+		Privileges []string `json:"privileges,omitempty"`
+		Privilege  []string `json:"privilege,omitempty"`
+	}{}
+	if err := sonic.Unmarshal(data, &tmp); err != nil {
+		return err
+	}
+	p.Database = tmp.Database
+	p.Table = tmp.Table
+	p.Privileges = tmp.Privileges
+	if len(p.Privileges) == 0 && len(tmp.Privilege) > 0 {
+		p.Privileges = tmp.Privilege
+	}
+	return nil
+}
+
+///////////////////////////////  role  ///////////////////////////////
+
+type CreateRoleArgs struct {
+	Role string `json:"role,omitempty"`
+}
+
+type DropRoleArgs struct {
+	Role string `json:"role,omitempty"`
+}
+
+type GrantRolePrivilegesArgs struct {
+	Role            string           `json:"role,omitempty"`
+	PrivilegeTuples []PrivilegeTuple `json:"privilegeTuples,omitempty"`
+}
+
+type RevokeRolePrivilegesArgs struct {
+	Role            string           `json:"role,omitempty"`
+	PrivilegeTuples []PrivilegeTuple `json:"privilegeTuples,omitempty"`
+}
+
+type ShowRolePrivilegesArgs struct {
+	Role string `json:"role,omitempty"`
+}
+
+type ShowRolePrivilegesResult struct {
+	Users           []string         `json:"users,omitempty"`
+	PrivilegeTuples []PrivilegeTuple `json:"privilegeTuples,omitempty"`
+}
+
+type SelectRoleArgs struct {
+	PrivilegeTuples []PrivilegeTuple `json:"privilegeTuples,omitempty"`
+}
+
+type SelectRoleResult struct {
+	Roles []string `json:"Roles"`
+}
+
+///////////////////////////////  user  ///////////////////////////////
+
+type CreateUserArgs struct {
+	Username string `json:"username,omitempty"`
+	Password string `json:"password,omitempty"`
+}
+
+type DropUserArgs struct {
+	Username string `json:"username,omitempty"`
+}
+
+type ChangeUserPasswordArgs struct {
+	Username    string `json:"username,omitempty"`
+	NewPassword string `json:"newPassword,omitempty"`
+}
+
+type GrantUserRolesArgs struct {
+	Username string   `json:"username,omitempty"`
+	Roles    []string `json:"roles,omitempty"`
+}
+
+type RevokeUserRolesArgs struct {
+	Username string   `json:"username,omitempty"`
+	Roles    []string `json:"roles,omitempty"`
+}
+
+type GrantUserPrivilegesArgs struct {
+	Username        string           `json:"username,omitempty"`
+	PrivilegeTuples []PrivilegeTuple `json:"privilegeTuples,omitempty"`
+}
+
+type RevokeUserPrivilegesArgs struct {
+	Username        string           `json:"username,omitempty"`
+	PrivilegeTuples []PrivilegeTuple `json:"privilegeTuples,omitempty"`
+}
+
+type ShowUserPrivilegesArgs struct {
+	Username string `json:"username,omitempty"`
+}
+
+type ShowUserPrivilegesResult struct {
+	Roles []struct {
+		Role            string           `json:"role,omitempty"`
+		PrivilegeTuples []PrivilegeTuple `json:"privilegeTuples,omitempty"`
+	} `json:"roles,omitempty"`
+	PrivilegeTuples []PrivilegeTuple `json:"privilegeTuples,omitempty"`
+}
+
+type SelectUserArgs struct {
+	Roles           []string         `json:"roles,omitempty"`
+	PrivilegeTuples []PrivilegeTuple `json:"privilegeTuples,omitempty"`
+}
+
+type SelectUserResult struct {
+	Users []string `json:"users,omitempty"`
 }

@@ -32,6 +32,7 @@ const (
 	FLAT   IndexType = "FLAT"
 	PUCK   IndexType = "PUCK"
 	HNSWPQ IndexType = "HNSWPQ"
+	SPARSE IndexType = "SPARSE_OPTIMIZED_FLAT"
 
 	// scalar index type
 	SecondaryIndex IndexType = "SECONDARY"
@@ -91,7 +92,9 @@ const (
 	FieldTypeTextGB18030 FieldType = "TEXT_GB18030"
 
 	// vector field type
-	FieldTypeFloatVector FieldType = "FLOAT_VECTOR"
+	FieldTypeFloatVector  FieldType = "FLOAT_VECTOR"
+	FieldTypeBinaryVector FieldType = "BINARY_VECTOR"
+	FieldTypeSparseVector FieldType = "SPARSE_FLOAT_VECTOR"
 
 	// array field type
 	FieldTypeArray FieldType = "ARRAY"
@@ -139,8 +142,8 @@ const (
 type ReadConsistency string
 
 const (
-	EVENTUAL ReadConsistency = "EVENTUAL"
-	STRONG   ReadConsistency = "STRONG"
+	ReadConsistencyEventual ReadConsistency = "EVENTUAL"
+	ReadConsistencyStrong   ReadConsistency = "STRONG"
 )
 
 type TableState string
@@ -210,4 +213,12 @@ const (
 	IndexDuplicated            ServerErrCode = 93
 	InvalidIndexState          ServerErrCode = 94
 	PrimaryKeyDuplicated       ServerErrCode = 100
+	RowKeyNotFound             ServerErrCode = 101
+)
+
+type FilterMode string
+
+const (
+	FilterModeAuto FilterMode = "AUTO"
+	FilterModePost FilterMode = "POST"
 )

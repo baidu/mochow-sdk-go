@@ -73,12 +73,40 @@ func (f *FieldSchema) MarshalJSON() ([]byte, error) {
 
 type IndexParams interface{}
 type VectorIndexParams map[string]interface{}
-type InvertedIndexParams map[string]interface{}
+type InvertedIndexParams struct {
+	params map[string]interface{}
+}
+
+func NewInvertedIndexParams() *InvertedIndexParams {
+	return &InvertedIndexParams{
+		params: make(map[string]interface{}),
+	}
+}
+
+func (p *InvertedIndexParams) Analyzer(analyzer InvertedIndexAnalyzer) *InvertedIndexParams {
+	p.params["analyzer"] = analyzer
+	return p
+}
+
+func (p *InvertedIndexParams) ParseMode(parseMode InvertedIndexParseMode) *InvertedIndexParams {
+	p.params["parseMode"] = parseMode
+	return p
+}
+
+func (p *InvertedIndexParams) AnalyzerCaseSensitive(caseSensitive bool) *InvertedIndexParams {
+	p.params["analyzerCaseSensitive"] = caseSensitive
+	return p
+}
+
+func (p *InvertedIndexParams) MarshalJSON() ([]byte, error) {
+	return sonic.Marshal(p.params)
+}
+
 type AutoBuildParams map[string]interface{}
 
 type FilteringIndexField struct {
-	Field              string             `json:"field"`
-	IndexStructureType IndexStructureType `json:"indexStructureType"`
+	Field              string             `json:"field,omitempty"`
+	IndexStructureType IndexStructureType `json:"indexStructureType,omitempty"`
 }
 
 func (f *FilteringIndexField) FromMapInterface(i interface{}) error {
@@ -124,14 +152,19 @@ func (index IndexSchema) MarshalJSON() ([]byte, error) {
 	// index type
 	params["indexType"] = index.IndexType
 	// metric type
-	params["metricType"] = index.MetricType
+	if len(index.MetricType) > 0 {
+		params["metricType"] = index.MetricType
+	}
 	// params
 	if index.Params != nil {
 		params["params"] = index.Params
 	}
 	// auto build
-	params["autoBuild"] = index.AutoBuild
-	params["autoBuildPolicy"] = index.AutoBuildPolicy
+	if index.AutoBuild {
+		params["autoBuild"] = index.AutoBuild
+		params["autoBuildPolicy"] = index.AutoBuildPolicy
+	}
+
 	params["state"] = index.State
 
 	// vector index and secondary index field
@@ -337,14 +370,14 @@ func (h *SearchParams) MarshalJSON() ([]byte, error) {
 type ANNSearchParams struct {
 	VectorField  string        `json:"vectorField,omitempty"`
 	VectorFloats []float32     `json:"vectorFloats,omitempty"`
-	Params       *SearchParams `json:"params,omitempty'"`
+	Params       *SearchParams `json:"params,omitempty"`
 	Filter       string        `json:"filter,omitempty"`
 }
 
 type BatchANNSearchParams struct {
 	VectorField  string        `json:"vectorField,omitempty"`
 	VectorFloats [][]float32   `json:"vectorFloats,omitempty"`
-	Params       *SearchParams `json:"params,omitempty'"`
+	Params       *SearchParams `json:"params,omitempty"`
 	Filter       string        `json:"filter,omitempty"`
 }
 
@@ -396,26 +429,20 @@ func (h *VectorSearchConfig) SearchCoarseCount(searchCoarseCount uint32) *Vector
 	return h
 }
 
+func (h *VectorSearchConfig) FilterMode(filterMode FilterMode) *VectorSearchConfig {
+	h.params["filterMode"] = filterMode
+	return h
+}
+
+func (h *VectorSearchConfig) PostFilterAmplicationFactor(amplicationFactor float32) *VectorSearchConfig {
+	h.params["postFilterAmplificationFactor"] = amplicationFactor
+	return h
+}
+
 type vectorSearchRequest interface {
 	searchRequest
-
-	// Make sure user not pass e.g. 'BM25SearchRequest' to VectorSearch api
 	vectorSearchRequestDummyInterface()
-}
-
-type Vector interface {
-	name() string
-	representation() interface{}
-}
-
-type FloatVector []float32
-
-func (v FloatVector) name() string {
-	return "vectorFloats"
-}
-
-func (v FloatVector) representation() interface{} {
-	return []float32(v)
+	SetIteratedIds(string)
 }
 
 type request struct {
@@ -435,7 +462,7 @@ type searchCommonFields struct {
 	request
 	partitionKey    map[string]interface{}
 	projections     []string
-	readConsistency string
+	readConsistency ReadConsistency
 	limit           uint32
 	filter          string
 }
@@ -468,6 +495,7 @@ type vectorSearchFields struct {
 	distanceNear float64
 	distanceFar  float64
 	config       *VectorSearchConfig
+	options      *AdvancedOptions
 }
 
 func (r vectorSearchFields) fillSearchFields(fields *map[string]interface{}) {
@@ -507,9 +535,11 @@ func (r vectorSearchFields) fillSearchFields(fields *map[string]interface{}) {
 	if len(params) != 0 {
 		anns["params"] = params
 	}
-
 	if len(anns) != 0 {
 		(*fields)["anns"] = anns
+	}
+	if r.isMarked("options") {
+		(*fields)["advancedOptions"] = r.options
 	}
 
 	for k, v := range searchCommonFieldsToMap(&r.searchCommonFields) {
@@ -520,11 +550,59 @@ func (r vectorSearchFields) fillSearchFields(fields *map[string]interface{}) {
 	}
 }
 
+type fusionRankPolicy interface {
+	fusionRankPolicyDummyInterface()
+	Params() map[string]interface{}
+}
+
+type RRFRank struct {
+	fusionRankPolicy
+	k int64
+}
+
+func (rank RRFRank) New(k int64) *RRFRank {
+	rank.k = k
+	return &rank
+}
+
+func (rank *RRFRank) Params() map[string]interface{} {
+	return map[string]interface{}{
+		"strategy": "rrf",
+		"params": map[string]interface{}{
+			"k": rank.k,
+		},
+	}
+}
+
+func (rank *RRFRank) fusionRankPolicyDummyInterface() {}
+
+type WeightedRank struct {
+	fusionRankPolicy
+	weights []float64
+}
+
+func (rank WeightedRank) New(weights []float64) *WeightedRank {
+	rank.weights = weights
+	return &rank
+}
+
+func (rank *WeightedRank) Params() map[string]interface{} {
+	return map[string]interface{}{
+		"strategy": "ws",
+		"params": map[string]interface{}{
+			"weights": rank.weights,
+		},
+	}
+}
+
+func (rank *WeightedRank) fusionRankPolicyDummyInterface() {}
+
 /**** Vector Topk Search ****/
 
 type VectorTopkSearchRequest struct {
 	vectorSearchRequest // interface
 	vectorSearchFields  // common fields
+	iteratedIds         string
 }
 
 func (r VectorTopkSearchRequest) New(vectorField string, vector Vector, limit uint32) *VectorTopkSearchRequest {
@@ -551,7 +629,7 @@ func (r *VectorTopkSearchRequest) PartitionKey(partitionKey map[string]interface
 	return r
 }
 
-func (r *VectorTopkSearchRequest) ReadConsistency(readConsistency string) *VectorTopkSearchRequest {
+func (r *VectorTopkSearchRequest) ReadConsistency(readConsistency ReadConsistency) *VectorTopkSearchRequest {
 	r.mark("readConsistency")
 	r.readConsistency = readConsistency
 	return r
@@ -575,6 +653,12 @@ func (r *VectorTopkSearchRequest) Config(config *VectorSearchConfig) *VectorTopk
 	return r
 }
 
+func (r *VectorTopkSearchRequest) AdvancedOptions(options *AdvancedOptions) *VectorTopkSearchRequest {
+	r.mark("advancedOptions")
+	r.options = options
+	return r
+}
+
 func (r *VectorTopkSearchRequest) requestType() string {
 	return "search"
 }
@@ -590,6 +674,10 @@ func (r *VectorTopkSearchRequest) toDict() map[string]interface{} {
 }
 
 func (r *VectorTopkSearchRequest) vectorSearchRequestDummyInterface() {
+}
+
+func (r *VectorTopkSearchRequest) SetIteratedIds(ids string) {
+	r.iteratedIds = ids
 }
 
 /**** Vector Range Search ****/
@@ -629,7 +717,7 @@ func (r *VectorRangeSearchRequest) PartitionKey(partitionKey map[string]interfac
 	return r
 }
 
-func (r *VectorRangeSearchRequest) ReadConsistency(readConsistency string) *VectorRangeSearchRequest {
+func (r *VectorRangeSearchRequest) ReadConsistency(readConsistency ReadConsistency) *VectorRangeSearchRequest {
 	r.mark("readConsistency")
 	r.readConsistency = readConsistency
 	return r
@@ -703,7 +791,7 @@ func (r *VectorBatchSearchRequest) PartitionKey(partitionKey map[string]interfac
 	return r
 }
 
-func (r *VectorBatchSearchRequest) ReadConsistency(readConsistency string) *VectorBatchSearchRequest {
+func (r *VectorBatchSearchRequest) ReadConsistency(readConsistency ReadConsistency) *VectorBatchSearchRequest {
 	r.mark("readConsistency")
 	r.readConsistency = readConsistency
 	return r
@@ -792,7 +880,7 @@ func (r *BM25SearchRequest) PartitionKey(partitionKey map[string]interface{}) *B
 	return r
 }
 
-func (r *BM25SearchRequest) ReadConsistency(readConsistency string) *BM25SearchRequest {
+func (r *BM25SearchRequest) ReadConsistency(readConsistency ReadConsistency) *BM25SearchRequest {
 	r.mark("readConsistency")
 	r.readConsistency = readConsistency
 	return r
@@ -892,7 +980,7 @@ func (r *HybridSearchRequest) PartitionKey(partitionKey map[string]interface{}) 
 	return r
 }
 
-func (r *HybridSearchRequest) ReadConsistency(readConsistency string) *HybridSearchRequest {
+func (r *HybridSearchRequest) ReadConsistency(readConsistency ReadConsistency) *HybridSearchRequest {
 	r.mark("readConsistency")
 	r.readConsistency = readConsistency
 	return r
@@ -952,6 +1040,102 @@ func (r *HybridSearchRequest) requestType() string {
 }
 
 func (r *HybridSearchRequest) hybridSearchRequestDummyInterface() {
+}
+
+/**** MultiVector Search ****/
+type MultivectorSearchRequest struct {
+	vectorSearchRequest
+	searchCommonFields // common fields
+	ranking            fusionRankPolicy
+	vectorRequests     []vectorSearchRequest
+	iteratedIds        string
+}
+
+/*
+Note: 'limit' and 'filter' are global settings. Avoid setting them in
+'bm25Request' or 'vectorRequest'.  Any settings in 'vectorRequests'
+for 'limit' or 'filter' will be overridden by the
+general settings.
+*/
+func (r MultivectorSearchRequest) New() *MultivectorSearchRequest {
+	r.set = make(map[string]bool, 0)
+	return &r
+}
+
+func (r *MultivectorSearchRequest) AddSingleVectorSearchRequest(vectorRequest vectorSearchRequest) *MultivectorSearchRequest {
+	r.vectorRequests = append(r.vectorRequests, vectorRequest)
+	return r
+}
+
+func (r *MultivectorSearchRequest) String() string {
+	return fmt.Sprintf("MultivectorSearchRequest:%v", r.toDict())
+}
+
+func (r *MultivectorSearchRequest) PartitionKey(partitionKey map[string]interface{}) *MultivectorSearchRequest {
+	r.mark("partitionKey")
+	r.partitionKey = partitionKey
+	return r
+}
+
+func (r *MultivectorSearchRequest) ReadConsistency(readConsistency ReadConsistency) *MultivectorSearchRequest {
+	r.mark("readConsistency")
+	r.readConsistency = readConsistency
+	return r
+}
+
+func (r *MultivectorSearchRequest) Projections(projections []string) *MultivectorSearchRequest {
+	r.mark("projections")
+	r.projections = projections
+	return r
+}
+
+func (r *MultivectorSearchRequest) Limit(limit uint32) *MultivectorSearchRequest {
+	r.mark("limit")
+	r.limit = limit
+	return r
+}
+
+func (r *MultivectorSearchRequest) Filter(filter string) *MultivectorSearchRequest {
+	r.mark("filter")
+	r.filter = filter
+	return r
+}
+
+func (r *MultivectorSearchRequest) Rank(rank fusionRankPolicy) *MultivectorSearchRequest {
+	r.ranking = rank
+	return r
+}
+
+func (r *MultivectorSearchRequest) toDict() map[string]interface{} {
+	fields := make(map[string]interface{})
+	searchList := []interface{}{}
+	for _, singleVectorRequest := range r.vectorRequests {
+		singleVectorRequestParam := singleVectorRequest.toDict()
+		searchList = append(searchList, singleVectorRequestParam["anns"])
+	}
+	fields["search"] = searchList
+	for k, v := range searchCommonFieldsToMap(&r.searchCommonFields) {
+		fields[k] = v
+	}
+	if r.ranking != nil {
+		fields["ranking"] = r.ranking.Params()
+	}
+	return fields
+}
+
+func (r *MultivectorSearchRequest) isBatch() bool {
+	return false
+}
+
+func (r *MultivectorSearchRequest) requestType() string {
+	return "multiVectorSearch"
+}
+
+func (r *MultivectorSearchRequest) multiVectorSearchRequestDummyInterface() {
+}
+
+func (r *MultivectorSearchRequest) SetIteratedIds(ids string) {
+	r.iteratedIds = ids
 }
 
 type AutoBuildPolicy interface {
@@ -1028,4 +1212,26 @@ func NewAutoBuildIncrementPolicy() *AutoBuildIncrementPolicy {
 	}
 }
 
-//
+type AdvancedOptions struct {
+	options map[string]interface{} `json:"-"`
+}
+
+func NewAdvancedOptions() *AdvancedOptions {
+	return &AdvancedOptions{
+		options: make(map[string]interface{}),
+	}
+}
+
+func (a *AdvancedOptions) AcceptPartialSuccessOnMPP(acceptPartialSuccessOnMPP bool) *AdvancedOptions {
+	a.options["acceptPartialSuccessOnMPP"] = acceptPartialSuccessOnMPP
+	return a
+}
+
+func (a *AdvancedOptions) SuccessRateLowerBoundOnMPP(successRateLowerBoundOnMPP float32) *AdvancedOptions {
+	a.options["successRateLowerBoundOnMPP"] = successRateLowerBoundOnMPP
+	return a
+}
+
+func (a *AdvancedOptions) MarshalJSON() ([]byte, error) {
+	return sonic.Marshal(a.options)
+}

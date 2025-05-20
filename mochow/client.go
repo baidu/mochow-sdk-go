@@ -217,6 +217,10 @@ func (c *Client) QueryRow(args *api.QueryRowArgs) (*api.QueryRowResult, error) {
 	return api.QueryRow(c, args)
 }
 
+func (c *Client) BatchQueryRow(args *api.BatchQueryRowArgs) (*api.BatchQueryRowResult, error) {
+	return api.BatchQueryRow(c, args)
+}
+
 // Deprecated: you should use VectorSearch with VectorTopkSearchRequest or VectorRangeSearchRequest instead.
 func (c *Client) SearchRow(args *api.SearchRowArgs) (*api.SearchRowResult, error) {
 	return api.SearchRow(c, args)
@@ -226,12 +230,32 @@ func (c *Client) VectorSearch(args *api.VectorSearchArgs) (*api.SearchResult, er
 	return api.VectorSearch(c, args)
 }
 
+func (c *Client) SearchIterator(args *api.SearchIteratorArgs) (*api.SearchIterator, error) {
+	opts := &api.SearchIteratorOptions{
+		Client:          c,
+		Database:        args.Database,
+		Table:           args.Table,
+		Request:         args.Request,
+		BatchSize:       args.BatchSize,
+		TotalSize:       args.TotalSize,
+		PartitionKey:    args.PartitionKey,
+		Projections:     args.Projections,
+		ReadConsistency: args.ReadConsistency,
+		Config:          args.Config,
+	}
+	return api.NewSearchIterator(opts)
+}
+
 func (c *Client) BM25Search(args *api.BM25SearchArgs) (*api.SearchResult, error) {
 	return api.BM25Search(c, args)
 }
 
 func (c *Client) HybridSearch(args *api.HybridSearchArgs) (*api.SearchResult, error) {
 	return api.HybridSearch(c, args)
+}
+
+func (c *Client) MultivectorSearch(args *api.MultivectorSearchArgs) (*api.SearchResult, error) {
+	return api.MultiVectorSearch(c, args)
 }
 
 func (c *Client) UpdateRow(args *api.UpdateRowArgs) error {
@@ -245,4 +269,83 @@ func (c *Client) SelectRow(args *api.SelectRowArgs) (*api.SelectRowResult, error
 // Deprecated: you should use VectorSearch with VectorBatchSearchRequest instead.
 func (c *Client) BatchSearchRow(args *api.BatchSearchRowArgs) (*api.BatchSearchRowResult, error) {
 	return api.BatchSearchRow(c, args)
+}
+
+/********************* Role interfaces *********************/
+func (c *Client) CreateRole(roleName string) error {
+	args := &api.CreateRoleArgs{Role: roleName}
+	return api.CreateRole(c, args)
+}
+
+func (c *Client) DropRole(roleName string) error {
+	args := &api.DropRoleArgs{Role: roleName}
+	return api.DropRole(c, args)
+}
+
+func (c *Client) GrantRolePrivileges(args *api.GrantRolePrivilegesArgs) error {
+	return api.GrantRolePrivileges(c, args)
+}
+
+func (c *Client) RevokeRolePrivileges(args *api.RevokeRolePrivilegesArgs) error {
+	return api.RevokeRolePrivileges(c, args)
+}
+
+func (c *Client) ShowRolePrivileges(roleName string) (*api.ShowRolePrivilegesResult, error) {
+	args := &api.ShowRolePrivilegesArgs{Role: roleName}
+	return api.ShowRolePrivileges(c, args)
+}
+
+func (c *Client) SelectRole(args *api.SelectRoleArgs) (*api.SelectRoleResult, error) {
+	return api.SelectRole(c, args)
+}
+
+/********************* User interfaces *********************/
+func (c *Client) CreateUser(username string, password string) error {
+	args := &api.CreateUserArgs{
+		Username: username,
+		Password: password,
+	}
+	return api.CreateUser(c, args)
+}
+
+func (c *Client) DropUser(username string) error {
+	args := &api.DropUserArgs{
+		Username: username,
+	}
+	return api.DropUser(c, args)
+}
+
+func (c *Client) ChangeUserPassword(username string, password string) error {
+	args := &api.ChangeUserPasswordArgs{
+		Username:    username,
+		NewPassword: password,
+	}
+	return api.ChangeUserPassword(c, args)
+}
+
+func (c *Client) GrantUserRoles(args *api.GrantUserRolesArgs) error {
+	return api.GrantUserRoles(c, args)
+}
+
+func (c *Client) RevokeUserRoles(args *api.RevokeUserRolesArgs) error {
+	return api.RevokeUserRoles(c, args)
+}
+
+func (c *Client) GrantUserPrivileges(args *api.GrantUserPrivilegesArgs) error {
+	return api.GrantUserPrivileges(c, args)
+}
+
+func (c *Client) RevokeUserPrivileges(args *api.RevokeUserPrivilegesArgs) error {
+	return api.RevokeUserPrivileges(c, args)
+}
+
+func (c *Client) ShowUserPrivileges(username string) (*api.ShowUserPrivilegesResult, error) {
+	args := &api.ShowUserPrivilegesArgs{
+		Username: username,
+	}
+	return api.ShowUserPrivileges(c, args)
+}
+
+func (c *Client) SelectUser(args *api.SelectUserArgs) (*api.SelectUserResult, error) {
+	return api.SelectUser(c, args)
 }

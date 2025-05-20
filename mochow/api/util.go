@@ -23,6 +23,8 @@ const (
 	RequestTableURI    = "/table"
 	RequestIndexURI    = "/index"
 	RequestRowURI      = "/row"
+	RequestRoleURI     = "/role"
+	RequestUserURI     = "/user"
 )
 
 func getDatabaseURI() string {
@@ -39,4 +41,12 @@ func getIndexURI() string {
 
 func getRowURI() string {
 	return URIPrefixV1 + RequestRowURI
+}
+
+func getRoleURI() string {
+	return URIPrefixV1 + RequestRoleURI
+}
+
+func getUserURI() string {
+	return URIPrefixV1 + RequestUserURI
 }

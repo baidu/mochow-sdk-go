@@ -140,6 +140,36 @@ func QueryRow(cli client.Client, args *QueryRowArgs) (*QueryRowResult, error) {
 	return result, nil
 }
 
+func BatchQueryRow(cli client.Client, args *BatchQueryRowArgs) (*BatchQueryRowResult, error) {
+	req := &client.BceRequest{}
+	req.SetURI(getRowURI())
+	req.SetMethod(http.Post)
+	req.SetParam("batchQuery", "")
+
+	jsonBytes, err := sonic.Marshal(args)
+	if err != nil {
+		return nil, err
+	}
+	body, err := client.NewBodyFromBytes(jsonBytes)
+	if err != nil {
+		return nil, err
+	}
+	req.SetBody(body)
+
+	resp := &client.BceResponse{}
+	if err := cli.SendRequest(req, resp); err != nil {
+		return nil, err
+	}
+	if resp.IsFail() {
+		return nil, resp.ServiceError()
+	}
+	result := &BatchQueryRowResult{}
+	if err := resp.ParseJSONBody(result); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
 func VectorSearch(cli client.Client, args *VectorSearchArgs) (*SearchResult, error) {
 	return search(cli, args.Database, args.Table, args.Request)
 }
@@ -149,6 +179,10 @@ func BM25Search(cli client.Client, args *BM25SearchArgs) (*SearchResult, error) 
 }
 
 func HybridSearch(cli client.Client, args *HybridSearchArgs) (*SearchResult, error) {
+	return search(cli, args.Database, args.Table, args.Request)
+}
+
+func MultiVectorSearch(cli client.Client, args *MultivectorSearchArgs) (*SearchResult, error) {
 	return search(cli, args.Database, args.Table, args.Request)
 }
 

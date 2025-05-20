@@ -35,6 +35,7 @@
 //
 //   - BceResponse:
 //     The response instance stands for an response from the BCE services.
+
 package client
 
 import (
