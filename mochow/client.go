@@ -241,7 +241,6 @@ func (c *Client) SearchIterator(args *api.SearchIteratorArgs) (*api.SearchIterat
 		PartitionKey:    args.PartitionKey,
 		Projections:     args.Projections,
 		ReadConsistency: args.ReadConsistency,
-		Config:          args.Config,
 	}
 	return api.NewSearchIterator(opts)
 }

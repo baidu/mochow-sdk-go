@@ -35,7 +35,6 @@ type SearchIterator struct {
 	readConsistency ReadConsistency
 	iteratedIds     string
 	returnedCount   uint32
-	config          map[string]interface{}
 }
 
 // SearchIteratorOptions contains all the parameters needed to create a SearchIterator
@@ -49,7 +48,6 @@ type SearchIteratorOptions struct {
 	PartitionKey    map[string]interface{}
 	Projections     []string
 	ReadConsistency ReadConsistency
-	Config          map[string]interface{}
 }
 
 // NewSearchIterator creates a new SearchIterator with the given options
@@ -90,7 +88,6 @@ func NewSearchIterator(opts *SearchIteratorOptions) (*SearchIterator, error) {
 		readConsistency: opts.ReadConsistency,
 		iteratedIds:     "",
 		returnedCount:   0,
-		config:          opts.Config,
 	}, nil
 }
 
