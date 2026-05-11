@@ -36,6 +36,7 @@ type ClientConfiguration struct {
 	ConnectionTimeoutMS int
 	RequestTimeoutMS    int
 	MaxRetry            int
+	IdleConnTimeoutMS   int // 0 uses default (90s); increase for high-QPS scenarios
 }
 
 // NewClient make the Mochow service client with default configuration.
@@ -72,11 +73,18 @@ func NewClientWithConfig(config *ClientConfiguration) (*Client, error) {
 		Retry:                     client.DefaultRetryPolicy,
 		ConnectionTimeoutInMillis: client.DefaultConnectionTimeoutInMills,
 		RequestTimeoutInMillis:    client.DefaultRequestTimeoutInMills,
+		MaxIdleConns:              client.DefaultMaxIdleConns,
+		MaxIdleConnsPerHost:       client.DefaultMaxIdleConnsPerHost,
+		MaxConnsPerHost:           client.DefaultMaxConnsPerHost,
+		IdleConnTimeoutInMillis:   client.DefaultIdleConnTimeoutInMills,
 		RedirectDisabled:          config.RedirectDisabled}
 
 	// Check timeout options
 	if config.ConnectionTimeoutMS < 0 || config.RequestTimeoutMS < 0 {
 		return nil, errors.New("connection and request timeout is negative")
+	}
+	if config.IdleConnTimeoutMS < 0 {
+		return nil, errors.New("idle connection timeout is negative")
 	}
 	if config.ConnectionTimeoutMS > 0 {
 		defaultConf.ConnectionTimeoutInMillis = config.ConnectionTimeoutMS
@@ -86,6 +94,9 @@ func NewClientWithConfig(config *ClientConfiguration) (*Client, error) {
 	}
 	if defaultConf.RequestTimeoutInMillis <= defaultConf.ConnectionTimeoutInMillis {
 		return nil, errors.New("request timeout should greater than connection timeout")
+	}
+	if config.IdleConnTimeoutMS > 0 {
+		defaultConf.IdleConnTimeoutInMillis = config.IdleConnTimeoutMS
 	}
 
 	// Check max retry option

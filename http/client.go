@@ -28,7 +28,10 @@ import (
 )
 
 const (
+	DefaultMaxIdleConns          = 500
 	DefaultMaxIdleConnsPerHost   = 500
+	DefaultMaxConnsPerHost       = 0 // 0 means no limit
+	DefaultIdleConnTimeout       = 90 * time.Second
 	DefaultResponseHeaderTimeout = 60 * time.Second
 	DefaultDialTimeout           = 30 * time.Second
 	DefaultSmallInterval         = 600 * time.Second
@@ -70,15 +73,36 @@ func (c *timeoutConn) SetWriteDeadline(t time.Time) error { return c.conn.SetWri
 type ClientConfig struct {
 	RedirectDisabled         bool
 	ConnectionTimeoutInMills int
+	MaxIdleConns             int
+	MaxIdleConnsPerHost      int
+	MaxConnsPerHost          int
+	IdleConnTimeout          time.Duration
 }
 
 var customizeInit sync.Once
+
+func coalesceInt(val, def int) int {
+	if val <= 0 {
+		return def
+	}
+	return val
+}
+
+func coalesceDuration(val, def time.Duration) time.Duration {
+	if val <= 0 {
+		return def
+	}
+	return val
+}
 
 func InitClient(config ClientConfig) {
 	customizeInit.Do(func() {
 		httpClient = &http.Client{}
 		transport = &http.Transport{
-			MaxIdleConnsPerHost:   DefaultMaxIdleConnsPerHost,
+			MaxIdleConns:          coalesceInt(config.MaxIdleConns, DefaultMaxIdleConns),
+			MaxIdleConnsPerHost:   coalesceInt(config.MaxIdleConnsPerHost, DefaultMaxIdleConnsPerHost),
+			MaxConnsPerHost:       config.MaxConnsPerHost,
+			IdleConnTimeout:       coalesceDuration(config.IdleConnTimeout, DefaultIdleConnTimeout),
 			ResponseHeaderTimeout: DefaultResponseHeaderTimeout,
 			Dial: func(network, address string) (net.Conn, error) {
 				conn, err := net.DialTimeout(network, address, time.Duration(config.ConnectionTimeoutInMills)*time.Millisecond)

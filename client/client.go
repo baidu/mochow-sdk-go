@@ -257,6 +257,10 @@ func NewBceClient(conf *BceClientConfiguration, sign auth.Signer) *BceClient {
 	clientConfig := http.ClientConfig{
 		RedirectDisabled:         conf.RedirectDisabled,
 		ConnectionTimeoutInMills: conf.ConnectionTimeoutInMillis,
+		MaxIdleConns:             conf.MaxIdleConns,
+		MaxIdleConnsPerHost:      conf.MaxIdleConnsPerHost,
+		MaxConnsPerHost:          conf.MaxConnsPerHost,
+		IdleConnTimeout:          time.Duration(conf.IdleConnTimeoutInMillis) * time.Millisecond,
 	}
 	http.InitClient(clientConfig)
 	return &BceClient{conf, sign}
@@ -275,6 +279,10 @@ func NewBceClientWithAPIKey(account, apiKey, endPoint string) (*BceClient, error
 		SignOption:                nil,
 		Retry:                     DefaultRetryPolicy,
 		ConnectionTimeoutInMillis: DefaultConnectionTimeoutInMills,
+		MaxIdleConns:              DefaultMaxIdleConns,
+		MaxIdleConnsPerHost:       DefaultMaxIdleConnsPerHost,
+		MaxConnsPerHost:           DefaultMaxConnsPerHost,
+		IdleConnTimeoutInMillis:   DefaultIdleConnTimeoutInMills,
 		RedirectDisabled:          false}
 	v1Signer := &auth.BceV1Signer{}
 
