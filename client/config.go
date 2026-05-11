@@ -33,6 +33,10 @@ const (
 	DefaultConnectionTimeoutInMills = 10 * 1000
 	DefaultRequestTimeoutInMills    = 60 * 1000
 	DefaultWarnLogTimeoutInMills    = 5 * 1000
+	DefaultMaxIdleConns             = 500
+	DefaultMaxIdleConnsPerHost      = 500
+	DefaultMaxConnsPerHost          = 0 // 0 means no limit
+	DefaultIdleConnTimeoutInMills   = 90 * 1000
 )
 
 var (
@@ -59,6 +63,10 @@ type BceClientConfiguration struct {
 	Retry                     RetryPolicy
 	ConnectionTimeoutInMillis int
 	RequestTimeoutInMillis    int
+	MaxIdleConns              int
+	MaxIdleConnsPerHost       int
+	MaxConnsPerHost           int
+	IdleConnTimeoutInMillis   int
 	// CnameEnabled should be true when use custom domain as endpoint to visit bos resource
 	CnameEnabled     bool
 	BackupEndpoint   string
