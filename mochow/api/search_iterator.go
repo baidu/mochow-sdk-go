@@ -71,7 +71,7 @@ func NewSearchIterator(opts *SearchIteratorOptions) (*SearchIterator, error) {
 			return nil, fmt.Errorf("'request.limit' should be equal to 'batchSize'")
 		}
 	case *MultivectorSearchRequest:
-		if r.limit != opts.BatchSize && r.isMarked("limit") {
+		if !r.isMarked("limit") || r.limit != opts.BatchSize {
 			return nil, fmt.Errorf("'request.limit' should be equal to 'batchSize'")
 		}
 	}
@@ -97,9 +97,9 @@ func (si *SearchIterator) Next() ([]RowResult, error) {
 	if si.returnedCount >= si.totalSize {
 		return nil, nil
 	}
-	// 设置 iteratedIds
+	si.applyRequestOptions()
+	// Propagate the server-side pagination token.
 	si.request.SetIteratedIds(si.iteratedIds)
-	// 调用 search
 	result, err := search(si.client, si.database, si.table, si.request)
 	if err != nil {
 		return nil, err
@@ -118,6 +118,31 @@ func (si *SearchIterator) Next() ([]RowResult, error) {
 		return result.Rows.Rows[:limit], nil
 	}
 	return result.Rows.Rows, nil
+}
+
+func (si *SearchIterator) applyRequestOptions() {
+	switch request := si.request.(type) {
+	case *VectorTopkSearchRequest:
+		if si.partitionKey != nil {
+			request.PartitionKey(si.partitionKey)
+		}
+		if si.projections != nil {
+			request.Projections(si.projections)
+		}
+		if len(si.readConsistency) > 0 {
+			request.ReadConsistency(si.readConsistency)
+		}
+	case *MultivectorSearchRequest:
+		if si.partitionKey != nil {
+			request.PartitionKey(si.partitionKey)
+		}
+		if si.projections != nil {
+			request.Projections(si.projections)
+		}
+		if len(si.readConsistency) > 0 {
+			request.ReadConsistency(si.readConsistency)
+		}
+	}
 }
 
 // Close cleans up any resources used by the iterator

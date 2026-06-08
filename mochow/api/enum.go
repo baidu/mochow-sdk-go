@@ -28,14 +28,21 @@ type IndexType string
 
 const (
 	// vector index type
-	HNSW   IndexType = "HNSW"
-	FLAT   IndexType = "FLAT"
-	PUCK   IndexType = "PUCK"
-	HNSWPQ IndexType = "HNSWPQ"
-	SPARSE IndexType = "SPARSE_OPTIMIZED_FLAT"
+	HNSW    IndexType = "HNSW"
+	FLAT    IndexType = "FLAT"
+	PUCK    IndexType = "PUCK"
+	HNSWPQ  IndexType = "HNSWPQ"
+	SPARSE  IndexType = "SPARSE_OPTIMIZED_FLAT"
+	HNSWSQ  IndexType = "HNSWSQ"
+	DISKANN IndexType = "DISKANN"
+	IVF     IndexType = "IVF"
+	IVFPQ   IndexType = "IVFPQ"
+	IVFSQ   IndexType = "IVFSQ"
 
 	// scalar index type
-	SecondaryIndex IndexType = "SECONDARY"
+	SecondaryIndex                  IndexType = "SECONDARY"
+	PersistentBitmapIndex           IndexType = "PERSISTENT_BITMAP"
+	PersistentAggregatedBitmapIndex IndexType = "PERSISTENT_AGGREGATED_BITMAP"
 
 	// filtering index type
 	FilteringIndex IndexType = "FILTERING"
@@ -90,6 +97,8 @@ const (
 	FieldTypeText        FieldType = "TEXT"
 	FieldTypeTextGBK     FieldType = "TEXT_GBK"
 	FieldTypeTextGB18030 FieldType = "TEXT_GB18030"
+	FieldTypeJSON        FieldType = "JSON"
+	FieldTypeMap         FieldType = "MAP"
 
 	// vector field type
 	FieldTypeFloatVector  FieldType = "FLOAT_VECTOR"
@@ -123,6 +132,59 @@ const (
 	ElementTypeText        ElementType = "TEXT"
 	ElementTypeTextGBK     ElementType = "TEXT_GBK"
 	ElementTypeTextGB18030 ElementType = "TEXT_GB18030"
+	ElementTypeFloatVector ElementType = "FLOAT_VECTOR"
+)
+
+type MapKeyType string
+
+const (
+	MapKeyTypeBool        MapKeyType = "BOOL"
+	MapKeyTypeInt8        MapKeyType = "INT8"
+	MapKeyTypeUint8       MapKeyType = "UINT8"
+	MapKeyTypeInt16       MapKeyType = "INT16"
+	MapKeyTypeUint16      MapKeyType = "UINT16"
+	MapKeyTypeInt32       MapKeyType = "INT32"
+	MapKeyTypeUint32      MapKeyType = "UINT32"
+	MapKeyTypeInt64       MapKeyType = "INT64"
+	MapKeyTypeUint64      MapKeyType = "UINT64"
+	MapKeyTypeFloat       MapKeyType = "FLOAT"
+	MapKeyTypeDouble      MapKeyType = "DOUBLE"
+	MapKeyTypeDate        MapKeyType = "DATE"
+	MapKeyTypeDatetime    MapKeyType = "DATETIME"
+	MapKeyTypeTimestamp   MapKeyType = "TIMESTAMP"
+	MapKeyTypeString      MapKeyType = "STRING"
+	MapKeyTypeBinary      MapKeyType = "BINARY"
+	MapKeyTypeUUID        MapKeyType = "UUID"
+	MapKeyTypeText        MapKeyType = "TEXT"
+	MapKeyTypeTextGBK     MapKeyType = "TEXT_GBK"
+	MapKeyTypeTextGB18030 MapKeyType = "TEXT_GB18030"
+)
+
+type MapValueType string
+
+const (
+	MapValueTypeBool        MapValueType = "BOOL"
+	MapValueTypeInt8        MapValueType = "INT8"
+	MapValueTypeUint8       MapValueType = "UINT8"
+	MapValueTypeInt16       MapValueType = "INT16"
+	MapValueTypeUint16      MapValueType = "UINT16"
+	MapValueTypeInt32       MapValueType = "INT32"
+	MapValueTypeUint32      MapValueType = "UINT32"
+	MapValueTypeInt64       MapValueType = "INT64"
+	MapValueTypeUint64      MapValueType = "UINT64"
+	MapValueTypeFloat       MapValueType = "FLOAT"
+	MapValueTypeDouble      MapValueType = "DOUBLE"
+	MapValueTypeDate        MapValueType = "DATE"
+	MapValueTypeDatetime    MapValueType = "DATETIME"
+	MapValueTypeTimestamp   MapValueType = "TIMESTAMP"
+	MapValueTypeString      MapValueType = "STRING"
+	MapValueTypeBinary      MapValueType = "BINARY"
+	MapValueTypeUUID        MapValueType = "UUID"
+	MapValueTypeText        MapValueType = "TEXT"
+	MapValueTypeTextGBK     MapValueType = "TEXT_GBK"
+	MapValueTypeTextGB18030 MapValueType = "TEXT_GB18030"
+	MapValueTypeFloatVector MapValueType = "FLOAT_VECTOR"
+	MapValueTypeArray       MapValueType = "ARRAY"
 )
 
 type AutoBuildPolicyType string
@@ -175,6 +237,7 @@ const (
 	OK                         ServerErrCode = 0
 	InternalError              ServerErrCode = 1
 	InvalidParameter           ServerErrCode = 2
+	Timeout                    ServerErrCode = 3
 	InvalidHTTPURL             ServerErrCode = 10
 	InvalidHTTPHeader          ServerErrCode = 11
 	InvalidHTTPBody            ServerErrCode = 12
@@ -204,6 +267,7 @@ const (
 	TableNotReady              ServerErrCode = 72
 	AliasNotExist              ServerErrCode = 73
 	AliasAlreadyExist          ServerErrCode = 74
+	TableMemoryExceedLimit     ServerErrCode = 75
 	FieldNotExist              ServerErrCode = 80
 	FieldAlreadyExist          ServerErrCode = 81
 	VectorFieldNotExist        ServerErrCode = 82

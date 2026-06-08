@@ -30,15 +30,17 @@ type PartitionParams struct {
 }
 
 type FieldSchema struct {
-	FieldName     string      `json:"fieldName"`
-	FieldType     FieldType   `json:"fieldType"`
-	PrimaryKey    bool        `json:"primaryKey"`
-	PartitionKey  bool        `json:"partitionKey"`
-	AutoIncrement bool        `json:"autoIncrement"`
-	NotNull       bool        `json:"notNull"`
-	Dimension     uint32      `json:"dimension"`
-	ElementType   ElementType `json:"elementType"`
-	MaxCapacity   uint32      `json:"maxCapacity"`
+	FieldName     string       `json:"fieldName"`
+	FieldType     FieldType    `json:"fieldType"`
+	PrimaryKey    bool         `json:"primaryKey"`
+	PartitionKey  bool         `json:"partitionKey"`
+	AutoIncrement bool         `json:"autoIncrement"`
+	NotNull       bool         `json:"notNull"`
+	Dimension     uint32       `json:"dimension"`
+	ElementType   ElementType  `json:"elementType"`
+	MaxCapacity   uint32       `json:"maxCapacity"`
+	KeyType       MapKeyType   `json:"keyType"`
+	ValueType     MapValueType `json:"valueType"`
 }
 
 func (f *FieldSchema) MarshalJSON() ([]byte, error) {
@@ -62,6 +64,12 @@ func (f *FieldSchema) MarshalJSON() ([]byte, error) {
 	}
 	if f.MaxCapacity != 0 {
 		fields["maxCapacity"] = f.MaxCapacity
+	}
+	if len(f.KeyType) > 0 {
+		fields["keyType"] = f.KeyType
+	}
+	if len(f.ValueType) > 0 {
+		fields["valueType"] = f.ValueType
 	}
 
 	field, err := sonic.Marshal(fields)
@@ -134,6 +142,7 @@ type IndexSchema struct {
 	IndexType                    IndexType
 	MetricType                   MetricType
 	Params                       IndexParams
+	Rules                        *IndexRules // for rule based index
 	Field                        string
 	InvertedIndexFields          []string                      // for inverted index
 	InvertedIndexFieldAttributes []InvertedIndexFieldAttribute // for inverted index
@@ -159,6 +168,10 @@ func (index IndexSchema) MarshalJSON() ([]byte, error) {
 	if index.Params != nil {
 		params["params"] = index.Params
 	}
+	// rules
+	if index.Rules != nil {
+		params["rules"] = index.Rules
+	}
 	// auto build
 	if index.AutoBuild {
 		params["autoBuild"] = index.AutoBuild
@@ -183,7 +196,7 @@ func (index IndexSchema) MarshalJSON() ([]byte, error) {
 		if len(index.InvertedIndexFieldAttributes) > 0 {
 			params["fieldsIndexAttributes"] = index.InvertedIndexFieldAttributes
 		}
-	case FilteringIndex:
+	case FilteringIndex, PersistentBitmapIndex, PersistentAggregatedBitmapIndex:
 		// filtering index fields
 		if len(index.FilterIndexFields) > 0 {
 			params["fields"] = index.FilterIndexFields
@@ -270,7 +283,7 @@ func (index *IndexSchema) UnmarshalJSON(data []byte) error {
 				}
 			}
 		}
-	case FilteringIndex:
+	case FilteringIndex, PersistentBitmapIndex, PersistentAggregatedBitmapIndex:
 		// fields for filtering index
 		if fields, ok := params["fields"]; ok {
 			switch t := fields.(type) {
@@ -295,16 +308,18 @@ type TableSchema struct {
 }
 
 type TableDescription struct {
-	Database           string           `json:"database"`
-	Table              string           `json:"table"`
-	CreateTime         string           `json:"createTime"`
-	Description        string           `json:"description"`
-	Replication        uint32           `json:"replication"`
-	Partition          *PartitionParams `json:"partition,omitempty"`
-	EnableDynamicField bool             `json:"enableDynamicField"`
-	State              TableState       `json:"state"`
-	Aliases            []string         `json:"aliases,omitempty"`
-	Schema             *TableSchema     `json:"schema,omitempty"`
+	Database                   string           `json:"database"`
+	Table                      string           `json:"table"`
+	CreateTime                 string           `json:"createTime"`
+	Description                string           `json:"description"`
+	Replication                uint32           `json:"replication"`
+	Partition                  *PartitionParams `json:"partition,omitempty"`
+	EnableDynamicField         bool             `json:"enableDynamicField"`
+	State                      TableState       `json:"state"`
+	Aliases                    []string         `json:"aliases,omitempty"`
+	Schema                     *TableSchema     `json:"schema,omitempty"`
+	DatanodeMemoryReservedInGB float64          `json:"datanodeMemoryReservedInGB,omitempty"`
+	TTL                        uint64           `json:"ttl,omitempty"`
 }
 
 type Row struct {
@@ -361,6 +376,18 @@ func (h *SearchParams) AddPruning(pruning bool) {
 
 func (h *SearchParams) AddSearchCoarseCount(searchCoarseCount uint32) {
 	h.Params["searchCoarseCount"] = searchCoarseCount
+}
+
+func (h *SearchParams) AddW(W uint32) {
+	h.Params["W"] = W
+}
+
+func (h *SearchParams) AddSearch_L(Search_L uint32) {
+	h.Params["searchL"] = Search_L
+}
+
+func (h *SearchParams) AddNProbe(nProbe uint32) {
+	h.Params["nprobe"] = nProbe
 }
 
 func (h *SearchParams) MarshalJSON() ([]byte, error) {
@@ -429,13 +456,32 @@ func (h *VectorSearchConfig) SearchCoarseCount(searchCoarseCount uint32) *Vector
 	return h
 }
 
+func (h *VectorSearchConfig) SearchL(search_l uint32) *VectorSearchConfig {
+	h.params["searchL"] = search_l
+	return h
+}
+
+func (h *VectorSearchConfig) W(w uint32) *VectorSearchConfig {
+	h.params["W"] = w
+	return h
+}
+
+func (h *VectorSearchConfig) NProbe(nProbe uint32) *VectorSearchConfig {
+	h.params["nprobe"] = nProbe
+	return h
+}
+
 func (h *VectorSearchConfig) FilterMode(filterMode FilterMode) *VectorSearchConfig {
 	h.params["filterMode"] = filterMode
 	return h
 }
 
 func (h *VectorSearchConfig) PostFilterAmplicationFactor(amplicationFactor float32) *VectorSearchConfig {
-	h.params["postFilterAmplificationFactor"] = amplicationFactor
+	return h.PostFilterAmplificationFactor(amplicationFactor)
+}
+
+func (h *VectorSearchConfig) PostFilterAmplificationFactor(amplificationFactor float32) *VectorSearchConfig {
+	h.params["postFilterAmplificationFactor"] = amplificationFactor
 	return h
 }
 
@@ -465,6 +511,7 @@ type searchCommonFields struct {
 	readConsistency ReadConsistency
 	limit           uint32
 	filter          string
+	offset          uint32
 }
 
 func searchCommonFieldsToMap(r *searchCommonFields) map[string]interface{} {
@@ -483,6 +530,9 @@ func searchCommonFieldsToMap(r *searchCommonFields) map[string]interface{} {
 	}
 	if r.isMarked("limit") {
 		fields["limit"] = r.limit
+	}
+	if r.isMarked("offset") {
+		fields["offset"] = r.offset
 	}
 	return fields
 }
@@ -538,7 +588,7 @@ func (r vectorSearchFields) fillSearchFields(fields *map[string]interface{}) {
 	if len(anns) != 0 {
 		(*fields)["anns"] = anns
 	}
-	if r.isMarked("options") {
+	if r.isMarked("advancedOptions") {
 		(*fields)["advancedOptions"] = r.options
 	}
 
@@ -647,6 +697,12 @@ func (r *VectorTopkSearchRequest) Filter(filter string) *VectorTopkSearchRequest
 	return r
 }
 
+func (r *VectorTopkSearchRequest) Offset(offset uint32) *VectorTopkSearchRequest {
+	r.mark("offset")
+	r.offset = offset
+	return r
+}
+
 func (r *VectorTopkSearchRequest) Config(config *VectorSearchConfig) *VectorTopkSearchRequest {
 	r.mark("config")
 	r.config = config
@@ -670,6 +726,9 @@ func (r *VectorTopkSearchRequest) isBatch() bool {
 func (r *VectorTopkSearchRequest) toDict() map[string]interface{} {
 	fields := make(map[string]interface{})
 	r.fillSearchFields(&fields)
+	if r.isMarked("iteratedIds") {
+		fields["iteratedIds"] = r.iteratedIds
+	}
 	return fields
 }
 
@@ -677,6 +736,10 @@ func (r *VectorTopkSearchRequest) vectorSearchRequestDummyInterface() {
 }
 
 func (r *VectorTopkSearchRequest) SetIteratedIds(ids string) {
+	if r.set == nil {
+		r.set = make(map[string]bool, 0)
+	}
+	r.mark("iteratedIds")
 	r.iteratedIds = ids
 }
 
@@ -741,9 +804,21 @@ func (r *VectorRangeSearchRequest) Filter(filter string) *VectorRangeSearchReque
 	return r
 }
 
+func (r *VectorRangeSearchRequest) Offset(offset uint32) *VectorRangeSearchRequest {
+	r.mark("offset")
+	r.offset = offset
+	return r
+}
+
 func (r *VectorRangeSearchRequest) Config(config *VectorSearchConfig) *VectorRangeSearchRequest {
 	r.mark("config")
 	r.config = config
+	return r
+}
+
+func (r *VectorRangeSearchRequest) AdvancedOptions(options *AdvancedOptions) *VectorRangeSearchRequest {
+	r.mark("advancedOptions")
+	r.options = options
 	return r
 }
 
@@ -768,6 +843,7 @@ func (r *VectorRangeSearchRequest) vectorSearchRequestDummyInterface() {
 type VectorBatchSearchRequest struct {
 	vectorSearchRequest // interface
 	vectorSearchFields  // common fields
+	mergeBatchResult    bool
 }
 
 func (r VectorBatchSearchRequest) New(vectorField string, vectors []Vector) *VectorBatchSearchRequest {
@@ -824,9 +900,27 @@ func (r *VectorBatchSearchRequest) Filter(filter string) *VectorBatchSearchReque
 	return r
 }
 
+func (r *VectorBatchSearchRequest) Offset(offset uint32) *VectorBatchSearchRequest {
+	r.mark("offset")
+	r.offset = offset
+	return r
+}
+
+func (r *VectorBatchSearchRequest) MergeBatchResult(mergeBatchResult bool) *VectorBatchSearchRequest {
+	r.mark("mergeBatchResult")
+	r.mergeBatchResult = mergeBatchResult
+	return r
+}
+
 func (r *VectorBatchSearchRequest) Config(config *VectorSearchConfig) *VectorBatchSearchRequest {
 	r.mark("config")
 	r.config = config
+	return r
+}
+
+func (r *VectorBatchSearchRequest) AdvancedOptions(options *AdvancedOptions) *VectorBatchSearchRequest {
+	r.mark("advancedOptions")
+	r.options = options
 	return r
 }
 
@@ -841,6 +935,9 @@ func (r *VectorBatchSearchRequest) requestType() string {
 func (r *VectorBatchSearchRequest) toDict() map[string]interface{} {
 	fields := make(map[string]interface{})
 	r.fillSearchFields(&fields)
+	if r.isMarked("mergeBatchResult") {
+		fields["mergeBatchResult"] = r.mergeBatchResult
+	}
 	return fields
 }
 
@@ -946,6 +1043,7 @@ type HybridSearchRequest struct {
 	bm25Request   bm25SearchRequest
 	vectorWeight  float32
 	bm25Weight    float32
+	options       *AdvancedOptions
 }
 
 /*
@@ -1004,6 +1102,12 @@ func (r *HybridSearchRequest) Filter(filter string) *HybridSearchRequest {
 	return r
 }
 
+func (r *HybridSearchRequest) AdvancedOptions(options *AdvancedOptions) *HybridSearchRequest {
+	r.mark("advancedOptions")
+	r.options = options
+	return r
+}
+
 func (r *HybridSearchRequest) toDict() map[string]interface{} {
 	fields := make(map[string]interface{})
 
@@ -1016,6 +1120,9 @@ func (r *HybridSearchRequest) toDict() map[string]interface{} {
 
 	for k, v := range searchCommonFieldsToMap(&r.searchCommonFields) {
 		fields[k] = v
+	}
+	if r.isMarked("advancedOptions") {
+		fields["advancedOptions"] = r.options
 	}
 
 	_, ok := fields["anns"]
@@ -1101,6 +1208,12 @@ func (r *MultivectorSearchRequest) Filter(filter string) *MultivectorSearchReque
 	return r
 }
 
+func (r *MultivectorSearchRequest) Offset(offset uint32) *MultivectorSearchRequest {
+	r.mark("offset")
+	r.offset = offset
+	return r
+}
+
 func (r *MultivectorSearchRequest) Rank(rank fusionRankPolicy) *MultivectorSearchRequest {
 	r.ranking = rank
 	return r
@@ -1120,6 +1233,9 @@ func (r *MultivectorSearchRequest) toDict() map[string]interface{} {
 	if r.ranking != nil {
 		fields["ranking"] = r.ranking.Params()
 	}
+	if r.isMarked("iteratedIds") {
+		fields["iteratedIds"] = r.iteratedIds
+	}
 	return fields
 }
 
@@ -1135,6 +1251,10 @@ func (r *MultivectorSearchRequest) multiVectorSearchRequestDummyInterface() {
 }
 
 func (r *MultivectorSearchRequest) SetIteratedIds(ids string) {
+	if r.set == nil {
+		r.set = make(map[string]bool, 0)
+	}
+	r.mark("iteratedIds")
 	r.iteratedIds = ids
 }
 
@@ -1232,6 +1352,35 @@ func (a *AdvancedOptions) SuccessRateLowerBoundOnMPP(successRateLowerBoundOnMPP 
 	return a
 }
 
+func (a *AdvancedOptions) TwoPhaseRetrieval(twoPhaseRetrieval bool) *AdvancedOptions {
+	a.options["twoPhaseRetrieval"] = twoPhaseRetrieval
+	return a
+}
+
 func (a *AdvancedOptions) MarshalJSON() ([]byte, error) {
 	return sonic.Marshal(a.options)
+}
+
+type IndexRules struct {
+	rules map[string]interface{} `json:"-"`
+}
+
+func NewIndexRules() *IndexRules {
+	return &IndexRules{
+		rules: make(map[string]interface{}),
+	}
+}
+
+func (i *IndexRules) IsolatedField(isolatedField string) *IndexRules {
+	i.rules["isolatedField"] = isolatedField
+	return i
+}
+
+func (i *IndexRules) Threshold(threshold int64) *IndexRules {
+	i.rules["threshold"] = threshold
+	return i
+}
+
+func (i *IndexRules) MarshalJSON() ([]byte, error) {
+	return sonic.Marshal(i.rules)
 }

@@ -113,13 +113,13 @@ func NewClientWithConfig(config *ClientConfiguration) (*Client, error) {
 }
 
 /********************* Database interfaces *********************/
-func (c *Client) CreateDatabase(database string) error {
+func (c *Client) CreateDatabase(database string, requestContexts ...client.RequestContext) error {
 	args := &api.CreateDatabaseArgs{Database: database}
-	return api.CreateDatabase(c, args)
+	return api.CreateDatabase(c, args, requestContexts...)
 }
 
-func (c *Client) DropDatabase(database string) error {
-	return api.DropDatabase(c, database)
+func (c *Client) DropDatabase(database string, requestContexts ...client.RequestContext) error {
+	return api.DropDatabase(c, database, requestContexts...)
 }
 
 func (c *Client) ListDatabase() (*api.ListDatabaseResult, error) {
@@ -140,17 +140,17 @@ func (c *Client) HasDatabase(database string) (bool, error) {
 }
 
 /********************* Table interfaces *********************/
-func (c *Client) CreateTable(args *api.CreateTableArgs) error {
-	return api.CreateTable(c, args)
+func (c *Client) CreateTable(args *api.CreateTableArgs, requestContexts ...client.RequestContext) error {
+	return api.CreateTable(c, args, requestContexts...)
 }
 
-func (c *Client) DropTable(database, table string) error {
-	return api.DropTable(c, database, table)
+func (c *Client) DropTable(database, table string, requestContexts ...client.RequestContext) error {
+	return api.DropTable(c, database, table, requestContexts...)
 }
 
-func (c *Client) ListTable(database string) (*api.ListTableResult, error) {
+func (c *Client) ListTable(database string, requestContexts ...client.RequestContext) (*api.ListTableResult, error) {
 	args := &api.ListTableArgs{Database: database}
-	return api.ListTable(c, args)
+	return api.ListTable(c, args, requestContexts...)
 }
 
 func (c *Client) HasTable(database, table string) (bool, error) {
@@ -166,79 +166,83 @@ func (c *Client) HasTable(database, table string) (bool, error) {
 	return false, nil
 }
 
-func (c *Client) DescTable(database, table string) (*api.DescTableResult, error) {
+func (c *Client) DescTable(database, table string, requestContexts ...client.RequestContext) (*api.DescTableResult, error) {
 	args := &api.DescTableArgs{Database: database, Table: table}
-	return api.DescTable(c, args)
+	return api.DescTable(c, args, requestContexts...)
 }
 
-func (c *Client) AddField(args *api.AddFieldArgs) error {
-	return api.AddField(c, args)
+func (c *Client) AddField(args *api.AddFieldArgs, requestContexts ...client.RequestContext) error {
+	return api.AddField(c, args, requestContexts...)
 }
 
-func (c *Client) AliasTable(database, table, alias string) error {
+func (c *Client) ModifyTable(args *api.ModifyTableArgs, requestContexts ...client.RequestContext) error {
+	return api.ModifyTable(c, args, requestContexts...)
+}
+
+func (c *Client) AliasTable(database, table, alias string, requestContexts ...client.RequestContext) error {
 	args := &api.AliasTableArgs{Database: database, Table: table, Alias: alias}
-	return api.AliasTable(c, args)
+	return api.AliasTable(c, args, requestContexts...)
 }
 
-func (c *Client) UnaliasTable(database, table, alias string) error {
+func (c *Client) UnaliasTable(database, table, alias string, requestContexts ...client.RequestContext) error {
 	args := &api.UnaliasTableArgs{Database: database, Table: table, Alias: alias}
-	return api.UnaliasTable(c, args)
+	return api.UnaliasTable(c, args, requestContexts...)
 }
 
-func (c *Client) ShowTableStats(database, table string) (*api.ShowTableStatsResult, error) {
+func (c *Client) ShowTableStats(database, table string, requestContexts ...client.RequestContext) (*api.ShowTableStatsResult, error) {
 	args := &api.ShowTableStatsArgs{Database: database, Table: table}
-	return api.ShowTableStats(c, args)
+	return api.ShowTableStats(c, args, requestContexts...)
 }
 
-func (c *Client) CreateIndex(args *api.CreateIndexArgs) error {
-	return api.CreateIndex(c, args)
+func (c *Client) CreateIndex(args *api.CreateIndexArgs, requestContexts ...client.RequestContext) error {
+	return api.CreateIndex(c, args, requestContexts...)
 }
 
-func (c *Client) DescIndex(database, table, indexName string) (*api.DescIndexResult, error) {
+func (c *Client) DescIndex(database, table, indexName string, requestContexts ...client.RequestContext) (*api.DescIndexResult, error) {
 	args := &api.DescIndexArgs{Database: database, Table: table, IndexName: indexName}
-	return api.DescIndex(c, args)
+	return api.DescIndex(c, args, requestContexts...)
 }
 
-func (c *Client) ModifyIndex(args *api.ModifyIndexArgs) error {
-	return api.ModifyIndex(c, args)
+func (c *Client) ModifyIndex(args *api.ModifyIndexArgs, requestContexts ...client.RequestContext) error {
+	return api.ModifyIndex(c, args, requestContexts...)
 }
 
-func (c *Client) DropIndex(database, table, indexName string) error {
-	return api.DropIndex(c, database, table, indexName)
+func (c *Client) DropIndex(database, table, indexName string, requestContexts ...client.RequestContext) error {
+	return api.DropIndex(c, database, table, indexName, requestContexts...)
 }
 
-func (c *Client) RebuildIndex(database, table, indexName string) error {
+func (c *Client) RebuildIndex(database, table, indexName string, requestContexts ...client.RequestContext) error {
 	args := &api.RebuildIndexArgs{Database: database, Table: table, IndexName: indexName}
-	return api.RebuildIndex(c, args)
+	return api.RebuildIndex(c, args, requestContexts...)
 }
 
-func (c *Client) InsertRow(args *api.InsertRowArgs) (*api.InsertRowResult, error) {
-	return api.InsertRow(c, args)
+func (c *Client) InsertRow(args *api.InsertRowArgs, requestContexts ...client.RequestContext) (*api.InsertRowResult, error) {
+	return api.InsertRow(c, args, requestContexts...)
 }
 
-func (c *Client) UpsertRow(args *api.UpsertRowArg) (*api.UpsertRowResult, error) {
-	return api.UpsertRow(c, args)
+func (c *Client) UpsertRow(args *api.UpsertRowArg, requestContexts ...client.RequestContext) (*api.UpsertRowResult, error) {
+	return api.UpsertRow(c, args, requestContexts...)
 }
 
-func (c *Client) DeleteRow(args *api.DeleteRowArgs) error {
-	return api.DeleteRow(c, args)
+func (c *Client) DeleteRow(args *api.DeleteRowArgs, requestContexts ...client.RequestContext) error {
+	return api.DeleteRow(c, args, requestContexts...)
 }
 
-func (c *Client) QueryRow(args *api.QueryRowArgs) (*api.QueryRowResult, error) {
-	return api.QueryRow(c, args)
+func (c *Client) QueryRow(args *api.QueryRowArgs, requestContexts ...client.RequestContext) (*api.QueryRowResult, error) {
+	return api.QueryRow(c, args, requestContexts...)
 }
 
-func (c *Client) BatchQueryRow(args *api.BatchQueryRowArgs) (*api.BatchQueryRowResult, error) {
-	return api.BatchQueryRow(c, args)
+func (c *Client) BatchQueryRow(args *api.BatchQueryRowArgs, requestContexts ...client.RequestContext) (*api.BatchQueryRowResult, error) {
+	return api.BatchQueryRow(c, args, requestContexts...)
 }
 
 // Deprecated: you should use VectorSearch with VectorTopkSearchRequest or VectorRangeSearchRequest instead.
-func (c *Client) SearchRow(args *api.SearchRowArgs) (*api.SearchRowResult, error) {
-	return api.SearchRow(c, args)
+func (c *Client) SearchRow(args *api.SearchRowArgs, requestContexts ...client.RequestContext) (*api.SearchRowResult, error) {
+	return api.SearchRow(c, args, requestContexts...)
 }
 
-func (c *Client) VectorSearch(args *api.VectorSearchArgs) (*api.SearchResult, error) {
-	return api.VectorSearch(c, args)
+func (c *Client) VectorSearch(args *api.VectorSearchArgs, requestContexts ...client.RequestContext) (*api.SearchResult, error) {
+	return api.VectorSearch(c, args, requestContexts...)
 }
 
 func (c *Client) SearchIterator(args *api.SearchIteratorArgs) (*api.SearchIterator, error) {
@@ -256,24 +260,24 @@ func (c *Client) SearchIterator(args *api.SearchIteratorArgs) (*api.SearchIterat
 	return api.NewSearchIterator(opts)
 }
 
-func (c *Client) BM25Search(args *api.BM25SearchArgs) (*api.SearchResult, error) {
-	return api.BM25Search(c, args)
+func (c *Client) BM25Search(args *api.BM25SearchArgs, requestContexts ...client.RequestContext) (*api.SearchResult, error) {
+	return api.BM25Search(c, args, requestContexts...)
 }
 
-func (c *Client) HybridSearch(args *api.HybridSearchArgs) (*api.SearchResult, error) {
-	return api.HybridSearch(c, args)
+func (c *Client) HybridSearch(args *api.HybridSearchArgs, requestContexts ...client.RequestContext) (*api.SearchResult, error) {
+	return api.HybridSearch(c, args, requestContexts...)
 }
 
-func (c *Client) MultivectorSearch(args *api.MultivectorSearchArgs) (*api.SearchResult, error) {
-	return api.MultiVectorSearch(c, args)
+func (c *Client) MultivectorSearch(args *api.MultivectorSearchArgs, requestContexts ...client.RequestContext) (*api.SearchResult, error) {
+	return api.MultiVectorSearch(c, args, requestContexts...)
 }
 
-func (c *Client) UpdateRow(args *api.UpdateRowArgs) error {
-	return api.UpdateRow(c, args)
+func (c *Client) UpdateRow(args *api.UpdateRowArgs, requestContexts ...client.RequestContext) error {
+	return api.UpdateRow(c, args, requestContexts...)
 }
 
-func (c *Client) SelectRow(args *api.SelectRowArgs) (*api.SelectRowResult, error) {
-	return api.SelectRow(c, args)
+func (c *Client) SelectRow(args *api.SelectRowArgs, requestContexts ...client.RequestContext) (*api.SelectRowResult, error) {
+	return api.SelectRow(c, args, requestContexts...)
 }
 
 // Deprecated: you should use VectorSearch with VectorBatchSearchRequest instead.

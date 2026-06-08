@@ -24,7 +24,7 @@ import (
 	"github.com/baidu/mochow-sdk-go/v2/http"
 )
 
-func CreateDatabase(cli client.Client, args *CreateDatabaseArgs) error {
+func CreateDatabase(cli client.Client, args *CreateDatabaseArgs, requestContexts ...client.RequestContext) error {
 	req := &client.BceRequest{}
 	req.SetURI(getDatabaseURI())
 	req.SetMethod(http.Post)
@@ -40,7 +40,7 @@ func CreateDatabase(cli client.Client, args *CreateDatabaseArgs) error {
 	req.SetBody(body)
 
 	resp := &client.BceResponse{}
-	if err := cli.SendRequest(req, resp); err != nil {
+	if err := cli.SendRequest(req, resp, requestContexts...); err != nil {
 		return err
 	}
 	if resp.IsFail() {
@@ -50,14 +50,14 @@ func CreateDatabase(cli client.Client, args *CreateDatabaseArgs) error {
 	return nil
 }
 
-func DropDatabase(cli client.Client, database string) error {
+func DropDatabase(cli client.Client, database string, requestContexts ...client.RequestContext) error {
 	req := &client.BceRequest{}
 	req.SetURI(getDatabaseURI())
 	req.SetMethod(http.Delete)
 	req.SetParam("database", database)
 
 	resp := &client.BceResponse{}
-	if err := cli.SendRequest(req, resp); err != nil {
+	if err := cli.SendRequest(req, resp, requestContexts...); err != nil {
 		return err
 	}
 	if resp.IsFail() {
@@ -67,14 +67,14 @@ func DropDatabase(cli client.Client, database string) error {
 	return nil
 }
 
-func ListDatabase(cli client.Client) (*ListDatabaseResult, error) {
+func ListDatabase(cli client.Client, requestContexts ...client.RequestContext) (*ListDatabaseResult, error) {
 	req := &client.BceRequest{}
 	req.SetURI(getDatabaseURI())
 	req.SetMethod(http.Post)
 	req.SetParam("list", "")
 
 	resp := &client.BceResponse{}
-	if err := cli.SendRequest(req, resp); err != nil {
+	if err := cli.SendRequest(req, resp, requestContexts...); err != nil {
 		return nil, err
 	}
 	if resp.IsFail() {

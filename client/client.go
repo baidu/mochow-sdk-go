@@ -35,7 +35,6 @@
 //
 //   - BceResponse:
 //     The response instance stands for an response from the BCE services.
-
 package client
 
 import (
@@ -55,7 +54,7 @@ import (
 // Client is the general interface which can perform sending request. Different service
 // will define its own client in case of specific extension.
 type Client interface {
-	SendRequest(*BceRequest, *BceResponse) error
+	SendRequest(*BceRequest, *BceResponse, ...RequestContext) error
 	SendRequestFromBytes(*BceRequest, *BceResponse, []byte) error
 	GetBceClientConfig() *BceClientConfiguration
 }
@@ -112,10 +111,18 @@ func (c *BceClient) buildHTTPRequest(request *BceRequest) {
 //
 // RETURNS:
 //   - error: nil if ok otherwise the specific error
-func (c *BceClient) SendRequest(req *BceRequest, resp *BceResponse) error {
+func (c *BceClient) SendRequest(req *BceRequest, resp *BceResponse, requestContexts ...RequestContext) error {
 	// Return client error if it is not nil
 	if req.ClientError() != nil {
 		return req.ClientError()
+	}
+
+	// Apply the request options
+	for _, option := range requestContexts {
+		if option == nil {
+			continue
+		}
+		option(req)
 	}
 
 	// Build the http request and prepare to send

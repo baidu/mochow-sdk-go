@@ -27,13 +27,15 @@ type ListDatabaseResult struct {
 }
 
 type CreateTableArgs struct {
-	Database           string           `json:"database"`
-	Table              string           `json:"table"`
-	Description        string           `json:"description"`
-	Replication        uint32           `json:"replication"`
-	Partition          *PartitionParams `json:"partition,omitempty"`
-	EnableDynamicField bool             `json:"enableDynamicField,omitempty"`
-	Schema             *TableSchema     `json:"schema,omitempty"`
+	Database                   string           `json:"database"`
+	Table                      string           `json:"table"`
+	Description                string           `json:"description"`
+	Replication                uint32           `json:"replication"`
+	Partition                  *PartitionParams `json:"partition,omitempty"`
+	EnableDynamicField         bool             `json:"enableDynamicField,omitempty"`
+	Schema                     *TableSchema     `json:"schema,omitempty"`
+	DatanodeMemoryReservedInGB float64          `json:"datanodeMemoryReservedInGB,omitempty"`
+	TTL                        uint64           `json:"ttl,omitempty"`
 }
 
 type ListTableArgs struct {
@@ -57,6 +59,12 @@ type AddFieldArgs struct {
 	Database string       `json:"database"`
 	Table    string       `json:"table"`
 	Schema   *TableSchema `json:"schema,omitempty"`
+}
+
+type ModifyTableArgs struct {
+	Database                   string  `json:"database"`
+	Table                      string  `json:"table"`
+	DatanodeMemoryReservedInGB float64 `json:"datanodeMemoryReservedInGB,omitempty"`
 }
 
 type AliasTableArgs struct {

@@ -23,7 +23,7 @@ import (
 	"github.com/baidu/mochow-sdk-go/v2/http"
 )
 
-func InsertRow(cli client.Client, args *InsertRowArgs) (*InsertRowResult, error) {
+func InsertRow(cli client.Client, args *InsertRowArgs, requestContexts ...client.RequestContext) (*InsertRowResult, error) {
 	req := &client.BceRequest{}
 	req.SetURI(getRowURI())
 	req.SetMethod(http.Post)
@@ -40,7 +40,7 @@ func InsertRow(cli client.Client, args *InsertRowArgs) (*InsertRowResult, error)
 	req.SetBody(body)
 
 	resp := &client.BceResponse{}
-	if err := cli.SendRequest(req, resp); err != nil {
+	if err := cli.SendRequest(req, resp, requestContexts...); err != nil {
 		return nil, err
 	}
 	if resp.IsFail() {
@@ -53,7 +53,7 @@ func InsertRow(cli client.Client, args *InsertRowArgs) (*InsertRowResult, error)
 	return result, nil
 }
 
-func UpsertRow(cli client.Client, args *UpsertRowArg) (*UpsertRowResult, error) {
+func UpsertRow(cli client.Client, args *UpsertRowArg, requestContexts ...client.RequestContext) (*UpsertRowResult, error) {
 	req := &client.BceRequest{}
 	req.SetURI(getRowURI())
 	req.SetMethod(http.Post)
@@ -70,7 +70,7 @@ func UpsertRow(cli client.Client, args *UpsertRowArg) (*UpsertRowResult, error) 
 	req.SetBody(body)
 
 	resp := &client.BceResponse{}
-	if err := cli.SendRequest(req, resp); err != nil {
+	if err := cli.SendRequest(req, resp, requestContexts...); err != nil {
 		return nil, err
 	}
 	if resp.IsFail() {
@@ -83,7 +83,7 @@ func UpsertRow(cli client.Client, args *UpsertRowArg) (*UpsertRowResult, error) 
 	return result, nil
 }
 
-func DeleteRow(cli client.Client, args *DeleteRowArgs) error {
+func DeleteRow(cli client.Client, args *DeleteRowArgs, requestContexts ...client.RequestContext) error {
 	req := &client.BceRequest{}
 	req.SetURI(getRowURI())
 	req.SetMethod(http.Post)
@@ -100,7 +100,7 @@ func DeleteRow(cli client.Client, args *DeleteRowArgs) error {
 	req.SetBody(body)
 
 	resp := &client.BceResponse{}
-	if err := cli.SendRequest(req, resp); err != nil {
+	if err := cli.SendRequest(req, resp, requestContexts...); err != nil {
 		return err
 	}
 	if resp.IsFail() {
@@ -110,7 +110,7 @@ func DeleteRow(cli client.Client, args *DeleteRowArgs) error {
 	return nil
 }
 
-func QueryRow(cli client.Client, args *QueryRowArgs) (*QueryRowResult, error) {
+func QueryRow(cli client.Client, args *QueryRowArgs, requestContexts ...client.RequestContext) (*QueryRowResult, error) {
 	req := &client.BceRequest{}
 	req.SetURI(getRowURI())
 	req.SetMethod(http.Post)
@@ -127,7 +127,7 @@ func QueryRow(cli client.Client, args *QueryRowArgs) (*QueryRowResult, error) {
 	req.SetBody(body)
 
 	resp := &client.BceResponse{}
-	if err := cli.SendRequest(req, resp); err != nil {
+	if err := cli.SendRequest(req, resp, requestContexts...); err != nil {
 		return nil, err
 	}
 	if resp.IsFail() {
@@ -140,7 +140,7 @@ func QueryRow(cli client.Client, args *QueryRowArgs) (*QueryRowResult, error) {
 	return result, nil
 }
 
-func BatchQueryRow(cli client.Client, args *BatchQueryRowArgs) (*BatchQueryRowResult, error) {
+func BatchQueryRow(cli client.Client, args *BatchQueryRowArgs, requestContexts ...client.RequestContext) (*BatchQueryRowResult, error) {
 	req := &client.BceRequest{}
 	req.SetURI(getRowURI())
 	req.SetMethod(http.Post)
@@ -157,7 +157,7 @@ func BatchQueryRow(cli client.Client, args *BatchQueryRowArgs) (*BatchQueryRowRe
 	req.SetBody(body)
 
 	resp := &client.BceResponse{}
-	if err := cli.SendRequest(req, resp); err != nil {
+	if err := cli.SendRequest(req, resp, requestContexts...); err != nil {
 		return nil, err
 	}
 	if resp.IsFail() {
@@ -170,23 +170,23 @@ func BatchQueryRow(cli client.Client, args *BatchQueryRowArgs) (*BatchQueryRowRe
 	return result, nil
 }
 
-func VectorSearch(cli client.Client, args *VectorSearchArgs) (*SearchResult, error) {
-	return search(cli, args.Database, args.Table, args.Request)
+func VectorSearch(cli client.Client, args *VectorSearchArgs, requestContexts ...client.RequestContext) (*SearchResult, error) {
+	return search(cli, args.Database, args.Table, args.Request, requestContexts...)
 }
 
-func BM25Search(cli client.Client, args *BM25SearchArgs) (*SearchResult, error) {
-	return search(cli, args.Database, args.Table, args.Request)
+func BM25Search(cli client.Client, args *BM25SearchArgs, requestContexts ...client.RequestContext) (*SearchResult, error) {
+	return search(cli, args.Database, args.Table, args.Request, requestContexts...)
 }
 
-func HybridSearch(cli client.Client, args *HybridSearchArgs) (*SearchResult, error) {
-	return search(cli, args.Database, args.Table, args.Request)
+func HybridSearch(cli client.Client, args *HybridSearchArgs, requestContexts ...client.RequestContext) (*SearchResult, error) {
+	return search(cli, args.Database, args.Table, args.Request, requestContexts...)
 }
 
-func MultiVectorSearch(cli client.Client, args *MultivectorSearchArgs) (*SearchResult, error) {
-	return search(cli, args.Database, args.Table, args.Request)
+func MultiVectorSearch(cli client.Client, args *MultivectorSearchArgs, requestContexts ...client.RequestContext) (*SearchResult, error) {
+	return search(cli, args.Database, args.Table, args.Request, requestContexts...)
 }
 
-func search(cli client.Client, database string, table string, request searchRequest) (*SearchResult, error) {
+func search(cli client.Client, database string, table string, request searchRequest, requestContexts ...client.RequestContext) (*SearchResult, error) {
 	args := request.toDict()
 	args["database"] = database
 	args["table"] = table
@@ -207,7 +207,7 @@ func search(cli client.Client, database string, table string, request searchRequ
 	req.SetBody(body)
 
 	resp := &client.BceResponse{}
-	if err := cli.SendRequest(req, resp); err != nil {
+	if err := cli.SendRequest(req, resp, requestContexts...); err != nil {
 		return nil, err
 	}
 	if resp.IsFail() {
@@ -230,7 +230,7 @@ func search(cli client.Client, database string, table string, request searchRequ
 }
 
 // Deprecated: you should use VectorSearch with VectorTopkSearchRequest or VectorRangeSearchRequest instead.
-func SearchRow(cli client.Client, args *SearchRowArgs) (*SearchRowResult, error) {
+func SearchRow(cli client.Client, args *SearchRowArgs, requestContexts ...client.RequestContext) (*SearchRowResult, error) {
 	req := &client.BceRequest{}
 	req.SetURI(getRowURI())
 	req.SetMethod(http.Post)
@@ -247,7 +247,7 @@ func SearchRow(cli client.Client, args *SearchRowArgs) (*SearchRowResult, error)
 	req.SetBody(body)
 
 	resp := &client.BceResponse{}
-	if err := cli.SendRequest(req, resp); err != nil {
+	if err := cli.SendRequest(req, resp, requestContexts...); err != nil {
 		return nil, err
 	}
 	if resp.IsFail() {
@@ -260,7 +260,7 @@ func SearchRow(cli client.Client, args *SearchRowArgs) (*SearchRowResult, error)
 	return result, nil
 }
 
-func UpdateRow(cli client.Client, args *UpdateRowArgs) error {
+func UpdateRow(cli client.Client, args *UpdateRowArgs, requestContexts ...client.RequestContext) error {
 	req := &client.BceRequest{}
 	req.SetURI(getRowURI())
 	req.SetMethod(http.Post)
@@ -277,7 +277,7 @@ func UpdateRow(cli client.Client, args *UpdateRowArgs) error {
 	req.SetBody(body)
 
 	resp := &client.BceResponse{}
-	if err := cli.SendRequest(req, resp); err != nil {
+	if err := cli.SendRequest(req, resp, requestContexts...); err != nil {
 		return err
 	}
 	if resp.IsFail() {
@@ -287,7 +287,7 @@ func UpdateRow(cli client.Client, args *UpdateRowArgs) error {
 	return nil
 }
 
-func SelectRow(cli client.Client, args *SelectRowArgs) (*SelectRowResult, error) {
+func SelectRow(cli client.Client, args *SelectRowArgs, requestContexts ...client.RequestContext) (*SelectRowResult, error) {
 	req := &client.BceRequest{}
 	req.SetURI(getRowURI())
 	req.SetMethod(http.Post)
@@ -304,7 +304,7 @@ func SelectRow(cli client.Client, args *SelectRowArgs) (*SelectRowResult, error)
 	req.SetBody(body)
 
 	resp := &client.BceResponse{}
-	if err := cli.SendRequest(req, resp); err != nil {
+	if err := cli.SendRequest(req, resp, requestContexts...); err != nil {
 		return nil, err
 	}
 	if resp.IsFail() {
@@ -318,7 +318,7 @@ func SelectRow(cli client.Client, args *SelectRowArgs) (*SelectRowResult, error)
 }
 
 // Deprecated: you should use VectorSearch with VectorBatchSearchRequest instead.
-func BatchSearchRow(cli client.Client, args *BatchSearchRowArgs) (*BatchSearchRowResult, error) {
+func BatchSearchRow(cli client.Client, args *BatchSearchRowArgs, requestContexts ...client.RequestContext) (*BatchSearchRowResult, error) {
 	req := &client.BceRequest{}
 	req.SetURI(getRowURI())
 	req.SetMethod(http.Post)
@@ -335,7 +335,7 @@ func BatchSearchRow(cli client.Client, args *BatchSearchRowArgs) (*BatchSearchRo
 	req.SetBody(body)
 
 	resp := &client.BceResponse{}
-	if err := cli.SendRequest(req, resp); err != nil {
+	if err := cli.SendRequest(req, resp, requestContexts...); err != nil {
 		return nil, err
 	}
 	if resp.IsFail() {

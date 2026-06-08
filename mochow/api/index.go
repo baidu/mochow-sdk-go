@@ -23,7 +23,7 @@ import (
 	"github.com/baidu/mochow-sdk-go/v2/http"
 )
 
-func CreateIndex(cli client.Client, args *CreateIndexArgs) error {
+func CreateIndex(cli client.Client, args *CreateIndexArgs, requestContexts ...client.RequestContext) error {
 	req := &client.BceRequest{}
 	req.SetURI(getIndexURI())
 	req.SetMethod(http.Post)
@@ -40,7 +40,7 @@ func CreateIndex(cli client.Client, args *CreateIndexArgs) error {
 	req.SetBody(body)
 
 	resp := &client.BceResponse{}
-	if err := cli.SendRequest(req, resp); err != nil {
+	if err := cli.SendRequest(req, resp, requestContexts...); err != nil {
 		return err
 	}
 	if resp.IsFail() {
@@ -50,7 +50,7 @@ func CreateIndex(cli client.Client, args *CreateIndexArgs) error {
 	return nil
 }
 
-func DescIndex(cli client.Client, args *DescIndexArgs) (*DescIndexResult, error) {
+func DescIndex(cli client.Client, args *DescIndexArgs, requestContexts ...client.RequestContext) (*DescIndexResult, error) {
 	req := &client.BceRequest{}
 	req.SetURI(getIndexURI())
 	req.SetMethod(http.Post)
@@ -67,7 +67,7 @@ func DescIndex(cli client.Client, args *DescIndexArgs) (*DescIndexResult, error)
 	req.SetBody(body)
 
 	resp := &client.BceResponse{}
-	if err := cli.SendRequest(req, resp); err != nil {
+	if err := cli.SendRequest(req, resp, requestContexts...); err != nil {
 		return nil, err
 	}
 	if resp.IsFail() {
@@ -80,7 +80,7 @@ func DescIndex(cli client.Client, args *DescIndexArgs) (*DescIndexResult, error)
 	return result, nil
 }
 
-func ModifyIndex(cli client.Client, args *ModifyIndexArgs) error {
+func ModifyIndex(cli client.Client, args *ModifyIndexArgs, requestContexts ...client.RequestContext) error {
 	req := &client.BceRequest{}
 	req.SetURI(getIndexURI())
 	req.SetMethod(http.Post)
@@ -97,7 +97,7 @@ func ModifyIndex(cli client.Client, args *ModifyIndexArgs) error {
 	req.SetBody(body)
 
 	resp := &client.BceResponse{}
-	if err := cli.SendRequest(req, resp); err != nil {
+	if err := cli.SendRequest(req, resp, requestContexts...); err != nil {
 		return err
 	}
 	if resp.IsFail() {
@@ -107,7 +107,7 @@ func ModifyIndex(cli client.Client, args *ModifyIndexArgs) error {
 	return nil
 }
 
-func DropIndex(cli client.Client, database, table, indexName string) error {
+func DropIndex(cli client.Client, database, table, indexName string, requestContexts ...client.RequestContext) error {
 	req := &client.BceRequest{}
 	req.SetURI(getIndexURI())
 	req.SetMethod(http.Delete)
@@ -116,7 +116,7 @@ func DropIndex(cli client.Client, database, table, indexName string) error {
 	req.SetParam("indexName", indexName)
 
 	resp := &client.BceResponse{}
-	if err := cli.SendRequest(req, resp); err != nil {
+	if err := cli.SendRequest(req, resp, requestContexts...); err != nil {
 		return err
 	}
 	if resp.IsFail() {
@@ -126,7 +126,7 @@ func DropIndex(cli client.Client, database, table, indexName string) error {
 	return nil
 }
 
-func RebuildIndex(cli client.Client, args *RebuildIndexArgs) error {
+func RebuildIndex(cli client.Client, args *RebuildIndexArgs, requestContexts ...client.RequestContext) error {
 	req := &client.BceRequest{}
 	req.SetURI(getIndexURI())
 	req.SetMethod(http.Post)
@@ -143,7 +143,7 @@ func RebuildIndex(cli client.Client, args *RebuildIndexArgs) error {
 	req.SetBody(body)
 
 	resp := &client.BceResponse{}
-	if err := cli.SendRequest(req, resp); err != nil {
+	if err := cli.SendRequest(req, resp, requestContexts...); err != nil {
 		return err
 	}
 	if resp.IsFail() {
