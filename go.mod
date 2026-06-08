@@ -1,6 +1,6 @@
 module github.com/baidu/mochow-sdk-go/v2
 
-go 1.17
+go 1.19.0
 
 require github.com/bytedance/sonic v1.13.2
 

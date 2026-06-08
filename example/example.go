@@ -79,7 +79,7 @@ func (m *MochowTest) clearEnv() error {
 
 func (m *MochowTest) createDatabaseAndTable() error {
 	// create database
-	if err := m.client.CreateDatabase(m.database); err != nil {
+	if err := m.client.CreateDatabase(m.database, client.WithRequestID("test_request_id_create_database")); err != nil {
 		log.Fatalf("Fail to create database due to error: %v", err)
 		return err
 	}
@@ -191,13 +191,13 @@ func (m *MochowTest) createDatabaseAndTable() error {
 			Indexes: indexes,
 		},
 	}
-	if err := m.client.CreateTable(createTableArgs); err != nil {
+	if err := m.client.CreateTable(createTableArgs, client.WithRequestID("test_request_id_create_table")); err != nil {
 		log.Fatalf("Fail to create table due to error: %v", err)
 		return err
 	}
 	for {
 		time.Sleep(5 * time.Second)
-		describeTableResult, err := m.client.DescTable(m.database, m.table)
+		describeTableResult, err := m.client.DescTable(m.database, m.table, client.WithRequestID("test_request_id_desc_table"))
 		if err == nil && describeTableResult.Table.State == api.TableStateNormal {
 			log.Println("Table create finished")
 			break
@@ -269,7 +269,7 @@ func (m *MochowTest) upsertData() error {
 		Table:    m.table,
 		Rows:     data,
 	}
-	upsertResult, err := m.client.UpsertRow(upsertArgs)
+	upsertResult, err := m.client.UpsertRow(upsertArgs, client.WithRequestID("test_request_id_upsert_row"))
 	if err != nil {
 		log.Fatalf("Fail to upsert row due to error: %v", err)
 		return err
@@ -288,7 +288,7 @@ func (m *MochowTest) queryData() error {
 		Projections:    []string{"id", "bookName"},
 		RetrieveVector: false,
 	}
-	queryResult, err := m.client.QueryRow(queryArgs)
+	queryResult, err := m.client.QueryRow(queryArgs, client.WithRequestID("test_request_id_query_row"))
 	if err != nil {
 		log.Fatalf("Fail to query row due to error: %v", err)
 		return err
@@ -316,7 +316,7 @@ func (m *MochowTest) batchQueryData() error {
 		Projections:    []string{"id", "bookName"},
 		RetrieveVector: false,
 	}
-	queryResult, err := m.client.BatchQueryRow(batchQueryArgs)
+	queryResult, err := m.client.BatchQueryRow(batchQueryArgs, client.WithRequestID("test_request_id_batch_query_row"))
 	if err != nil {
 		log.Fatalf("Fail to batch query row due to error: %v", err)
 		return err
@@ -333,7 +333,7 @@ func (m *MochowTest) selectData() error {
 		Limit:       1,
 	}
 	for {
-		selectResult, err := m.client.SelectRow(selectArgs)
+		selectResult, err := m.client.SelectRow(selectArgs, client.WithRequestID("test_request_id_select_row"))
 		if err != nil {
 			log.Fatalf("Fail to select row due to error: %v", err)
 			return err
@@ -361,7 +361,7 @@ func (m *MochowTest) updateData() error {
 			"segment":  "满纸荒唐言，一把辛酸泪",
 		},
 	}
-	err := m.client.UpdateRow(updateArgs)
+	err := m.client.UpdateRow(updateArgs, client.WithRequestID("test_request_id_update_row"))
 	if err != nil {
 		log.Fatalf("Fail to update row due to error: %v", err)
 		return err
@@ -371,13 +371,13 @@ func (m *MochowTest) updateData() error {
 
 func (m *MochowTest) topkSearch() error {
 	// rebuild vector index
-	if err := m.client.RebuildIndex(m.database, m.table, "vector_idx"); err != nil {
+	if err := m.client.RebuildIndex(m.database, m.table, "vector_idx", client.WithRequestID("test_request_id_rebuild_index")); err != nil {
 		log.Fatalf("Fail to rebuild index due to error: %v", err)
 		return err
 	}
 	for {
 		time.Sleep(5 * time.Second)
-		descIndexResult, _ := m.client.DescIndex(m.database, m.table, "vector_idx")
+		descIndexResult, _ := m.client.DescIndex(m.database, m.table, "vector_idx", client.WithRequestID("test_request_id_desc_index"))
 		if descIndexResult.Index.State == api.IndexStateNormal {
 			log.Println("Index rebuild finished")
 			break
@@ -396,7 +396,7 @@ func (m *MochowTest) topkSearch() error {
 			Config(api.VectorSearchConfig{}.New().Ef(200)),
 	}
 
-	searchResult, err := m.client.VectorSearch(searchArgs)
+	searchResult, err := m.client.VectorSearch(searchArgs, client.WithRequestID("test_request_id_vector_search"))
 	if err != nil {
 		log.Fatalf("Fail to search row due to error: %v", err)
 		return err
@@ -419,7 +419,7 @@ func (m *MochowTest) rangeSearch() error {
 			Config(api.VectorSearchConfig{}.New().Ef(200)),
 	}
 
-	searchResult, err := m.client.VectorSearch(searchArgs)
+	searchResult, err := m.client.VectorSearch(searchArgs, client.WithRequestID("test_request_id_vector_range_search"))
 	if err != nil {
 		log.Fatalf("Fail to search row due to error: %v", err)
 		return err
@@ -445,7 +445,7 @@ func (m *MochowTest) batchSearch() error {
 			Projections([]string{"id", "bookName", "author", "page"}),
 	}
 
-	searchResult, err := m.client.VectorSearch(searchArgs)
+	searchResult, err := m.client.VectorSearch(searchArgs, client.WithRequestID("test_request_id_vector_batch_search"))
 	if err != nil {
 		log.Fatalf("Fail to batch search row due to error: %v", err)
 		return err
@@ -468,7 +468,7 @@ func (m *MochowTest) bm25Search() error {
 			Projections([]string{"id", "vector"}),
 	}
 
-	searchResult, err := m.client.BM25Search(searchArgs)
+	searchResult, err := m.client.BM25Search(searchArgs, client.WithRequestID("test_request_id_bm25_search"))
 	if err != nil {
 		log.Fatalf("Fail to search row due to error: %v", err)
 		return err
@@ -496,7 +496,7 @@ func (m *MochowTest) hybridSearch() error {
 		Request:  request,
 	}
 
-	searchResult, err := m.client.HybridSearch(searchArgs)
+	searchResult, err := m.client.HybridSearch(searchArgs, client.WithRequestID("test_request_id_hybrid_search"))
 	if err != nil {
 		log.Fatalf("Fail to search row due to error: %v", err)
 		return err
@@ -522,7 +522,7 @@ func (m *MochowTest) multiVectorSearch() error {
 		Request:  request,
 	}
 
-	searchResult, err := m.client.MultivectorSearch(searchArgs)
+	searchResult, err := m.client.MultivectorSearch(searchArgs, client.WithRequestID("test_request_id_multivector_search"))
 	if err != nil {
 		log.Fatalf("Fail to search row due to error: %v", err)
 		return err
@@ -590,7 +590,7 @@ func (m *MochowTest) deleteDataWithPK() error {
 			"id": "0001",
 		},
 	}
-	if err := m.client.DeleteRow(deleteArgs); err != nil {
+	if err := m.client.DeleteRow(deleteArgs, client.WithRequestID("test_request_id_delete_row")); err != nil {
 		log.Fatalf("Fail to delete row due to error: %v", err)
 		return err
 	}

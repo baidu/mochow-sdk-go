@@ -23,7 +23,7 @@ import (
 	"github.com/baidu/mochow-sdk-go/v2/http"
 )
 
-func CreateTable(cli client.Client, args *CreateTableArgs) error {
+func CreateTable(cli client.Client, args *CreateTableArgs, requestContexts ...client.RequestContext) error {
 	req := &client.BceRequest{}
 	req.SetURI(getTableURI())
 	req.SetMethod(http.Post)
@@ -39,7 +39,7 @@ func CreateTable(cli client.Client, args *CreateTableArgs) error {
 	req.SetBody(body)
 
 	resp := &client.BceResponse{}
-	if err := cli.SendRequest(req, resp); err != nil {
+	if err := cli.SendRequest(req, resp, requestContexts...); err != nil {
 		return err
 	}
 	if resp.IsFail() {
@@ -49,7 +49,7 @@ func CreateTable(cli client.Client, args *CreateTableArgs) error {
 	return nil
 }
 
-func DropTable(cli client.Client, database, table string) error {
+func DropTable(cli client.Client, database, table string, requestContexts ...client.RequestContext) error {
 	req := &client.BceRequest{}
 	req.SetURI(getTableURI())
 	req.SetMethod(http.Delete)
@@ -57,7 +57,7 @@ func DropTable(cli client.Client, database, table string) error {
 	req.SetParam("table", table)
 
 	resp := &client.BceResponse{}
-	if err := cli.SendRequest(req, resp); err != nil {
+	if err := cli.SendRequest(req, resp, requestContexts...); err != nil {
 		return err
 	}
 	if resp.IsFail() {
@@ -67,7 +67,7 @@ func DropTable(cli client.Client, database, table string) error {
 	return nil
 }
 
-func ListTable(cli client.Client, args *ListTableArgs) (*ListTableResult, error) {
+func ListTable(cli client.Client, args *ListTableArgs, requestContexts ...client.RequestContext) (*ListTableResult, error) {
 	req := &client.BceRequest{}
 	req.SetURI(getTableURI())
 	req.SetMethod(http.Post)
@@ -84,7 +84,7 @@ func ListTable(cli client.Client, args *ListTableArgs) (*ListTableResult, error)
 	req.SetBody(body)
 
 	resp := &client.BceResponse{}
-	if err := cli.SendRequest(req, resp); err != nil {
+	if err := cli.SendRequest(req, resp, requestContexts...); err != nil {
 		return nil, err
 	}
 	if resp.IsFail() {
@@ -97,7 +97,7 @@ func ListTable(cli client.Client, args *ListTableArgs) (*ListTableResult, error)
 	return result, nil
 }
 
-func DescTable(cli client.Client, args *DescTableArgs) (*DescTableResult, error) {
+func DescTable(cli client.Client, args *DescTableArgs, requestContexts ...client.RequestContext) (*DescTableResult, error) {
 	req := &client.BceRequest{}
 	req.SetURI(getTableURI())
 	req.SetMethod(http.Post)
@@ -114,7 +114,7 @@ func DescTable(cli client.Client, args *DescTableArgs) (*DescTableResult, error)
 	req.SetBody(body)
 
 	resp := &client.BceResponse{}
-	if err := cli.SendRequest(req, resp); err != nil {
+	if err := cli.SendRequest(req, resp, requestContexts...); err != nil {
 		return nil, err
 	}
 	if resp.IsFail() {
@@ -127,7 +127,7 @@ func DescTable(cli client.Client, args *DescTableArgs) (*DescTableResult, error)
 	return result, nil
 }
 
-func AddField(cli client.Client, args *AddFieldArgs) error {
+func AddField(cli client.Client, args *AddFieldArgs, requestContexts ...client.RequestContext) error {
 	req := &client.BceRequest{}
 	req.SetURI(getTableURI())
 	req.SetMethod(http.Post)
@@ -144,7 +144,7 @@ func AddField(cli client.Client, args *AddFieldArgs) error {
 	req.SetBody(body)
 
 	resp := &client.BceResponse{}
-	if err := cli.SendRequest(req, resp); err != nil {
+	if err := cli.SendRequest(req, resp, requestContexts...); err != nil {
 		return err
 	}
 	if resp.IsFail() {
@@ -154,7 +154,34 @@ func AddField(cli client.Client, args *AddFieldArgs) error {
 	return nil
 }
 
-func AliasTable(cli client.Client, args *AliasTableArgs) error {
+func ModifyTable(cli client.Client, args *ModifyTableArgs, requestContexts ...client.RequestContext) error {
+	req := &client.BceRequest{}
+	req.SetURI(getTableURI())
+	req.SetMethod(http.Post)
+	req.SetParam("modify", "")
+
+	jsonBytes, err := sonic.Marshal(args)
+	if err != nil {
+		return err
+	}
+	body, err := client.NewBodyFromBytes(jsonBytes)
+	if err != nil {
+		return err
+	}
+	req.SetBody(body)
+
+	resp := &client.BceResponse{}
+	if err := cli.SendRequest(req, resp, requestContexts...); err != nil {
+		return err
+	}
+	if resp.IsFail() {
+		return resp.ServiceError()
+	}
+	defer func() { resp.Body().Close() }()
+	return nil
+}
+
+func AliasTable(cli client.Client, args *AliasTableArgs, requestContexts ...client.RequestContext) error {
 	req := &client.BceRequest{}
 	req.SetURI(getTableURI())
 	req.SetMethod(http.Post)
@@ -171,7 +198,7 @@ func AliasTable(cli client.Client, args *AliasTableArgs) error {
 	req.SetBody(body)
 
 	resp := &client.BceResponse{}
-	if err := cli.SendRequest(req, resp); err != nil {
+	if err := cli.SendRequest(req, resp, requestContexts...); err != nil {
 		return err
 	}
 	if resp.IsFail() {
@@ -181,7 +208,7 @@ func AliasTable(cli client.Client, args *AliasTableArgs) error {
 	return nil
 }
 
-func UnaliasTable(cli client.Client, args *UnaliasTableArgs) error {
+func UnaliasTable(cli client.Client, args *UnaliasTableArgs, requestContexts ...client.RequestContext) error {
 	req := &client.BceRequest{}
 	req.SetURI(getTableURI())
 	req.SetMethod(http.Post)
@@ -198,7 +225,7 @@ func UnaliasTable(cli client.Client, args *UnaliasTableArgs) error {
 	req.SetBody(body)
 
 	resp := &client.BceResponse{}
-	if err := cli.SendRequest(req, resp); err != nil {
+	if err := cli.SendRequest(req, resp, requestContexts...); err != nil {
 		return err
 	}
 	if resp.IsFail() {
@@ -208,7 +235,7 @@ func UnaliasTable(cli client.Client, args *UnaliasTableArgs) error {
 	return nil
 }
 
-func ShowTableStats(cli client.Client, args *ShowTableStatsArgs) (*ShowTableStatsResult, error) {
+func ShowTableStats(cli client.Client, args *ShowTableStatsArgs, requestContexts ...client.RequestContext) (*ShowTableStatsResult, error) {
 	req := &client.BceRequest{}
 	req.SetURI(getTableURI())
 	req.SetMethod(http.Post)
@@ -225,7 +252,7 @@ func ShowTableStats(cli client.Client, args *ShowTableStatsArgs) (*ShowTableStat
 	req.SetBody(body)
 
 	resp := &client.BceResponse{}
-	if err := cli.SendRequest(req, resp); err != nil {
+	if err := cli.SendRequest(req, resp, requestContexts...); err != nil {
 		return nil, err
 	}
 	if resp.IsFail() {
