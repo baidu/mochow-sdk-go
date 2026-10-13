@@ -303,8 +303,15 @@ func (index *IndexSchema) UnmarshalJSON(data []byte) error {
 }
 
 type TableSchema struct {
-	Fields  []FieldSchema `json:"fields,omitempty"`
-	Indexes []IndexSchema `json:"indexes,omitempty"`
+	Fields          []FieldSchema     `json:"fields,omitempty"`
+	Indexes         []IndexSchema     `json:"indexes,omitempty"`
+	EmbeddingParams []EmbeddingParams `json:"embeddingParams,omitempty"`
+}
+
+type EmbeddingParams struct {
+	InputFieldName  string `json:"inputFieldName"`
+	OutputFieldName string `json:"outputFieldName"`
+	ModelName       string `json:"modelName"`
 }
 
 type TableDescription struct {
@@ -539,17 +546,30 @@ func searchCommonFieldsToMap(r *searchCommonFields) map[string]interface{} {
 
 type vectorSearchFields struct {
 	searchCommonFields
-	vectorField  string
-	vector       Vector
-	vectors      []Vector
-	distanceNear float64
-	distanceFar  float64
-	config       *VectorSearchConfig
-	options      *AdvancedOptions
+	vectorField   string
+	vector        Vector
+	vectors       []Vector
+	truncationDim uint32
+	distanceNear  float64
+	distanceFar   float64
+	config        *VectorSearchConfig
+	options       *AdvancedOptions
+	textField     string
+	text          string
+	texts         []string
 }
 
 func (r vectorSearchFields) fillSearchFields(fields *map[string]interface{}) {
 	anns := make(map[string]interface{})
+	if r.isMarked("textField") {
+		anns["textField"] = r.textField
+	}
+	if r.isMarked("text") {
+		anns["text"] = r.text
+	}
+	if r.isMarked("texts") {
+		anns["texts"] = r.texts
+	}
 	if r.isMarked("vectorField") {
 		anns["vectorField"] = r.vectorField
 	}
@@ -669,6 +689,17 @@ func (r VectorTopkSearchRequest) New(vectorField string, vector Vector, limit ui
 	return &r
 }
 
+func (r VectorTopkSearchRequest) NewText(textField string, text string, limit uint32) *VectorTopkSearchRequest {
+	r.set = make(map[string]bool, 0)
+	r.mark("textField")
+	r.textField = textField
+	r.mark("text")
+	r.text = text
+	r.mark("limit")
+	r.limit = limit
+	return &r
+}
+
 func (r *VectorTopkSearchRequest) String() string {
 	return fmt.Sprintf("VectorTopkSearchRequest:%v", r.toDict())
 }
@@ -706,6 +737,34 @@ func (r *VectorTopkSearchRequest) Offset(offset uint32) *VectorTopkSearchRequest
 func (r *VectorTopkSearchRequest) Config(config *VectorSearchConfig) *VectorTopkSearchRequest {
 	r.mark("config")
 	r.config = config
+	return r
+}
+
+func (r *VectorTopkSearchRequest) TruncationDim(dim uint32) *VectorTopkSearchRequest {
+	r.mark("truncationDim")
+	r.truncationDim = dim
+	return r
+}
+
+func (r *VectorTopkSearchRequest) WithTextField(textField string) *VectorTopkSearchRequest {
+	r.mark("textField")
+	r.textField = textField
+	delete(r.set, "vector")
+	delete(r.set, "vectors")
+	return r
+}
+
+func (r *VectorTopkSearchRequest) WithVectorField(vectorField string) *VectorTopkSearchRequest {
+	r.mark("vectorField")
+	r.vectorField = vectorField
+	return r
+}
+
+func (r *VectorTopkSearchRequest) WithText(text string) *VectorTopkSearchRequest {
+	r.mark("text")
+	r.text = text
+	delete(r.set, "vector")
+	delete(r.set, "vectors")
 	return r
 }
 
@@ -770,6 +829,19 @@ func (r VectorRangeSearchRequest) New(vectorField string, vector Vector, distanc
 	return &r
 }
 
+func (r VectorRangeSearchRequest) NewText(textField string, text string, distanceRange DistanceRange) *VectorRangeSearchRequest {
+	r.set = make(map[string]bool, 0)
+	r.mark("textField")
+	r.textField = textField
+	r.mark("text")
+	r.text = text
+	r.mark("distanceNear")
+	r.distanceNear = distanceRange.Min
+	r.mark("distanceFar")
+	r.distanceFar = distanceRange.Max
+	return &r
+}
+
 func (r *VectorRangeSearchRequest) String() string {
 	return fmt.Sprintf("VectorRangeSearchRequest:%v", r.toDict())
 }
@@ -816,6 +888,34 @@ func (r *VectorRangeSearchRequest) Config(config *VectorSearchConfig) *VectorRan
 	return r
 }
 
+func (r *VectorRangeSearchRequest) TruncationDim(dim uint32) *VectorRangeSearchRequest {
+	r.mark("truncationDim")
+	r.truncationDim = dim
+	return r
+}
+
+func (r *VectorRangeSearchRequest) WithTextField(textField string) *VectorRangeSearchRequest {
+	r.mark("textField")
+	r.textField = textField
+	delete(r.set, "vector")
+	delete(r.set, "vectors")
+	return r
+}
+
+func (r *VectorRangeSearchRequest) WithVectorField(vectorField string) *VectorRangeSearchRequest {
+	r.mark("vectorField")
+	r.vectorField = vectorField
+	return r
+}
+
+func (r *VectorRangeSearchRequest) WithText(text string) *VectorRangeSearchRequest {
+	r.mark("text")
+	r.text = text
+	delete(r.set, "vector")
+	delete(r.set, "vectors")
+	return r
+}
+
 func (r *VectorRangeSearchRequest) AdvancedOptions(options *AdvancedOptions) *VectorRangeSearchRequest {
 	r.mark("advancedOptions")
 	r.options = options
@@ -854,6 +954,15 @@ func (r VectorBatchSearchRequest) New(vectorField string, vectors []Vector) *Vec
 
 	r.mark("vectors")
 	r.vectors = vectors
+	return &r
+}
+
+func (r VectorBatchSearchRequest) NewText(textField string, texts []string) *VectorBatchSearchRequest {
+	r.set = make(map[string]bool, 0)
+	r.mark("textField")
+	r.textField = textField
+	r.mark("texts")
+	r.texts = texts
 	return &r
 }
 
@@ -915,6 +1024,34 @@ func (r *VectorBatchSearchRequest) MergeBatchResult(mergeBatchResult bool) *Vect
 func (r *VectorBatchSearchRequest) Config(config *VectorSearchConfig) *VectorBatchSearchRequest {
 	r.mark("config")
 	r.config = config
+	return r
+}
+
+func (r *VectorBatchSearchRequest) TruncationDim(dim uint32) *VectorBatchSearchRequest {
+	r.mark("truncationDim")
+	r.truncationDim = dim
+	return r
+}
+
+func (r *VectorBatchSearchRequest) WithTextField(textField string) *VectorBatchSearchRequest {
+	r.mark("textField")
+	r.textField = textField
+	delete(r.set, "vectors")
+	delete(r.set, "vector")
+	return r
+}
+
+func (r *VectorBatchSearchRequest) WithVectorField(vectorField string) *VectorBatchSearchRequest {
+	r.mark("vectorField")
+	r.vectorField = vectorField
+	return r
+}
+
+func (r *VectorBatchSearchRequest) WithTexts(texts []string) *VectorBatchSearchRequest {
+	r.mark("texts")
+	r.texts = texts
+	delete(r.set, "vectors")
+	delete(r.set, "vector")
 	return r
 }
 
